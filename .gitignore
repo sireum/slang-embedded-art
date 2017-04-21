@@ -1,0 +1,8 @@
+/.idea
+/lib_managed
+/project/project
+target
+.DS_Store
+*.class
+Scratch.scala
+Scratch.sc

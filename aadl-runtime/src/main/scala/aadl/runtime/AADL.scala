@@ -6,18 +6,59 @@ import org.sireum._
 
 object AADL {
   type PortId = N32
-  val logTitle = "AADL Runtime"
-  val portIdInit = n32"0"
-  var ports: N32 = portIdInit
+  type BridgeId = N32
 
-  // can't find definition in the standard ??
-  def dispatchStatus(bridge: AADL.Bridge): Option[PortId] = { // DISPATCH_STATUS
-    val r = AADLExt.dispatchStatus(bridge)
+  val logTitle = "AADL Runtime"
+  val initIdVal = n32"0"
+  var bridgeIds: BridgeId = initIdVal
+  var portIds: PortId = initIdVal
+  var maxPorts: PortId = initIdVal
+  var maxBridges: BridgeId = initIdVal
+  var bridges: MS[BridgeId, Bridge] = MS[BridgeId, Bridge]()
+  var connections: MS[PortId, PortId] = MS[PortId, PortId]()
+  var lastSporadic: MS[AADL.BridgeId, Z64] = MS[AADL.BridgeId, Z64]()
+
+  def init(numOfPorts: Z, numOfBridges: Z): Unit = {
+    portIds = initIdVal
+    bridgeIds = initIdVal
+    maxPorts = Z.toN32(numOfPorts)
+    maxBridges = Z.toN32(numOfBridges)
+    bridges = MS[BridgeId, Bridge]()
+    lastSporadic = MS.create[BridgeId, Z64](maxBridges, z64"0")
+    connections = MS.create[PortId, PortId](maxPorts, initIdVal)
+  }
+
+  def registerPort(name: String, port: Port): PortId = {
+    l"""{ requires portIds < maxPorts }"""
+    val r = portIds
+    portIds = r + n32"1"
+    AADLExt.logInfo(logTitle, s"Registered port: $name (#$r)")
     return r
   }
 
-  def receiveInput(portIds: ISZ[PortId]): Unit = { // RECEIVE_INPUT
-    AADLExt.receiveInput(portIds)
+  def registerBridge(bridge: Bridge): BridgeId = {
+    l"""{ requires bridgeIds < maxBridges }"""
+    val r = bridgeIds
+    bridge.setId(r)
+    bridges = bridges :+ bridge
+    bridgeIds = r + n32"1"
+    bridge.dispatchProtocol match {
+      case Bridge.DispatchPropertyProtocol.Periodic(period) =>
+        AADLExt.logInfo(logTitle, s"Registered bridge: ${bridge.name} (#$r, periodic: $period)")
+      case Bridge.DispatchPropertyProtocol.Sporadic(min) =>
+        AADLExt.logInfo(logTitle, s"Registered bridge: ${bridge.name} (#$r, sporadic: $min)")
+    }
+    return r
+  }
+
+  // can't find definition in the standard ??
+  def dispatchStatus(bridgeId: AADL.BridgeId): Option[PortId] = { // DISPATCH_STATUS
+    val r = AADLExt.dispatchStatus(bridgeId)
+    return r
+  }
+
+  def receiveInput(eventPortIdOpt: Option[PortId], dataPortIds: ISZ[PortId]): Unit = { // RECEIVE_INPUT
+    AADLExt.receiveInput(eventPortIdOpt, dataPortIds)
   }
 
   def putValue[T](portId: PortId, data: T): Unit = { // PUT_VALUE
@@ -30,26 +71,12 @@ object AADL {
     return r
   }
 
-  // standard calls for a list of ports
-  // but putValue should build the list dynamically
-  def sendOutput(): Unit = { // SEND_OUTPUT
-    AADLExt.sendOutput()
-  }
-
-  def registerPort(name: String, port: Port): PortId = {
-    assume(ports < N32.Max - n32"1")
-    val r = ports + n32"1"
-    ports = r
-    AADLExt.logInfo(logTitle, s"Registered port: $name (#$r)")
-    return r
-  }
-
-  def registerBridge(bridge: Bridge): Unit = {
-    AADLExt.registerBridge(bridge)
+  def sendOutput(eventPortIds: ISZ[AADL.PortId], dataPortIds: ISZ[AADL.PortId]): Unit = { // SEND_OUTPUT
+    AADLExt.sendOutput(eventPortIds, dataPortIds)
   }
 
   def connect(from: PortId, to: PortId): Unit = {
-    AADLExt.connect(from, to)
+    connections(from) = to
     AADLExt.logInfo(logTitle, s"Connected ports: $from -> $to")
   }
 
@@ -57,10 +84,15 @@ object AADL {
 
   @sig trait Bridge {
     def name: String
+    def id: BridgeId
+    def setId(id: BridgeId): Unit
     def entryPoints: Bridge.EntryPoints
     def dispatchProtocol: Bridge.DispatchPropertyProtocol
     def portIds: ISZ[PortId]
     def inPortIds: ISZ[PortId]
+    def outPortIds: ISZ[PortId]
+    def dataPortIds: ISZ[PortId]
+    def eventPortIds: ISZ[PortId]
   }
 
   object Bridge {
@@ -98,17 +130,15 @@ object AADL {
 }
 
 @ext object AADLExt {
-  def dispatchStatus(bridge: AADL.Bridge): Option[AADL.PortId] = $
-  def receiveInput(portIds: ISZ[AADL.PortId]): Unit = $
+  def dispatchStatus(bridgeId: AADL.BridgeId): Option[AADL.PortId] = $
+  def receiveInput(eventPortIdOpt: Option[AADL.PortId], dataPortIds: ISZ[AADL.PortId]): Unit = $
   def putValue[T](portId: AADL.PortId, data: T): Unit = $
   def getValue[T](portId: AADL.PortId): T = $
-  def sendOutput(): Unit = $
-  def registerBridge(bridge: AADL.Bridge): Unit = $
-  def connect(from: AADL.PortId, to: AADL.PortId): Unit = $
+  def sendOutput(eventPortIds: ISZ[AADL.PortId], dataPortIds: ISZ[AADL.PortId]): Unit = $
   def logInfo(title: String, msg: String): Unit = $
   def logError(title: String, msg: String): Unit = $
   def logDebug(title: String, msg: String): Unit = $
-  def logInfo(bridge: AADL.Bridge, msg: String): Unit = $
-  def logError(bridge: AADL.Bridge, msg: String): Unit = $
-  def logDebug(bridge: AADL.Bridge, msg: String): Unit = $
+  def logInfo(bridgeId: AADL.BridgeId, msg: String): Unit = $
+  def logError(bridgeId: AADL.BridgeId, msg: String): Unit = $
+  def logDebug(bridgeId: AADL.BridgeId, msg: String): Unit = $
 }

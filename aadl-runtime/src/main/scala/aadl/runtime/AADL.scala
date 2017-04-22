@@ -6,12 +6,13 @@ import org.sireum._
 
 object AADL {
   type PortId = N32
+  val logTitle = "AADL Runtime"
   val portIdInit = n32"0"
   var ports: N32 = portIdInit
 
   // can't find definition in the standard ??
-  def dispatchStatus: Option[PortId] = { // DISPATCH_STATUS
-    val r = AADLExt.dispatchStatus
+  def dispatchStatus(bridge: AADL.Bridge): Option[PortId] = { // DISPATCH_STATUS
+    val r = AADLExt.dispatchStatus(bridge)
     return r
   }
 
@@ -35,10 +36,11 @@ object AADL {
     AADLExt.sendOutput()
   }
 
-  def registerPort(port: Port): PortId = {
+  def registerPort(name: String, port: Port): PortId = {
     assume(ports < N32.Max - n32"1")
-    val r = ports
-    ports = ports + n32"1"
+    val r = ports + n32"1"
+    ports = r
+    AADLExt.logInfo(logTitle, s"Registered port: $name (#$r)")
     return r
   }
 
@@ -48,6 +50,7 @@ object AADL {
 
   def connect(from: PortId, to: PortId): Unit = {
     AADLExt.connect(from, to)
+    AADLExt.logInfo(logTitle, s"Connected ports: $from -> $to")
   }
 
   @sig trait Port
@@ -56,6 +59,8 @@ object AADL {
     def name: String
     def entryPoints: Bridge.EntryPoints
     def dispatchProtocol: Bridge.DispatchPropertyProtocol
+    def portIds: ISZ[PortId]
+    def inPortIds: ISZ[PortId]
   }
 
   object Bridge {
@@ -93,13 +98,16 @@ object AADL {
 }
 
 @ext object AADLExt {
-  def dispatchStatus: Option[AADL.PortId] = $
+  def dispatchStatus(bridge: AADL.Bridge): Option[AADL.PortId] = $
   def receiveInput(portIds: ISZ[AADL.PortId]): Unit = $
   def putValue[T](portId: AADL.PortId, data: T): Unit = $
   def getValue[T](portId: AADL.PortId): T = $
   def sendOutput(): Unit = $
   def registerBridge(bridge: AADL.Bridge): Unit = $
   def connect(from: AADL.PortId, to: AADL.PortId): Unit = $
+  def logInfo(title: String, msg: String): Unit = $
+  def logError(title: String, msg: String): Unit = $
+  def logDebug(title: String, msg: String): Unit = $
   def logInfo(bridge: AADL.Bridge, msg: String): Unit = $
   def logError(bridge: AADL.Bridge, msg: String): Unit = $
   def logDebug(bridge: AADL.Bridge, msg: String): Unit = $

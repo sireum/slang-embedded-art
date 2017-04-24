@@ -1,11 +1,10 @@
 package aadl.runtime
 
-import AADL.Bridge.DispatchPropertyProtocol._
 import org.sireum._
 
 import scala.collection.immutable.ListSet
 
-object AADLExt_Ext {
+object AADLNative_Ext {
   val slowdown = z64"100"
   var rates: ListSet[Z64] = ListSet()
   var rateBridges: Map[Z64, ISZ[AADL.BridgeId]] = Map()
@@ -15,7 +14,7 @@ object AADLExt_Ext {
   val sentPortValues: scala.collection.mutable.Map[AADL.PortId, Any] = concMap()
 
   def dispatchStatus(bridgeId: AADL.BridgeId): Option[AADL.PortId] = {
-    val is = AADL.bridges(bridgeId).inPortIds.elements.filter(eventPortVariables.contains)
+    val is = AADL.bridges(bridgeId).ports.mode(PortMode.EventIn).elements.map(_.id).filter(eventPortVariables.contains)
     is.sortBy(p => eventPortVariables(p)._1.value).headOption match {
       case scala.Some(in) => Some(in)
       case _ => None()
@@ -81,7 +80,7 @@ object AADLExt_Ext {
 
   def run(): Unit = {
     for (bridge <- AADL.bridges) bridge.dispatchProtocol match {
-      case Periodic(period) =>
+      case DispatchPropertyProtocol.Periodic(period) =>
         val rate = N32.toZ64(period)
         rates += rate
         rateBridges += rate -> (rateBridges.getOrElse(rate, ISZ()) :+ bridge.id)
@@ -92,8 +91,8 @@ object AADLExt_Ext {
 
     for (bridge <- AADL.bridges) {
       bridge.dispatchProtocol match {
-        case Periodic(_) =>
-        case Sporadic(min) =>
+        case DispatchPropertyProtocol.Periodic(_) =>
+        case DispatchPropertyProtocol.Sporadic(min) =>
           val minRate = N32.toZ64(min)
           val (less, more) = rates.toVector.sortBy(_.value).map(r => (r - minRate, r)).partition(_._1 >= z64"0")
           val rate = ((less.lastOption, more.headOption): @unchecked) match {
@@ -113,8 +112,8 @@ object AADLExt_Ext {
       hyperPeriod *= rate
       new Thread(() => {
         logInfo(AADL.logTitle, s"Thread for rate group $rate instantiated.")
-        AADLExt_Ext.synchronized {
-          AADLExt_Ext.wait()
+        AADLNative_Ext.synchronized {
+          AADLNative_Ext.wait()
         }
         while (!terminated) {
           Thread.sleep((rate * slowdown).value)
@@ -122,13 +121,13 @@ object AADLExt_Ext {
           for (bridgeId <- rateBridges(rate)) {
             val bridge = AADL.bridges(bridgeId)
             bridge.dispatchProtocol match {
-              case Periodic(_) => bridgesToCompute ::= bridgeId
-              case Sporadic(min) =>
+              case DispatchPropertyProtocol.Periodic(_) => bridgesToCompute ::= bridgeId
+              case DispatchPropertyProtocol.Sporadic(min) =>
                 val minRate = N32.toZ64(min).value
                 val lastSporadic = AADL.lastSporadic(bridgeId).value
                 if (System.currentTimeMillis() - lastSporadic < minRate) {
                   // skip
-                } else if (bridge.inPortIds.elements.exists(eventPortVariables.contains)) {
+                } else if (bridge.ports.mode(PortMode.EventIn).elements.map(_.id).exists(eventPortVariables.contains)) {
                   bridgesToCompute ::= bridgeId
                   AADL.lastSporadic(bridgeId) = toZ64(System.currentTimeMillis())
                 } else {
@@ -139,7 +138,7 @@ object AADLExt_Ext {
           for (bridgeId <- bridgesToCompute.par)
             AADL.bridges(bridgeId).entryPoints.compute()
         }
-        AADLExt_Ext.synchronized {
+        AADLNative_Ext.synchronized {
           numTerminated += 1
         }
       }).start()
@@ -148,8 +147,8 @@ object AADLExt_Ext {
     Thread.sleep(hyperPeriod.value)
 
     logInfo(AADL.logTitle, s"Start execution...")
-    AADLExt_Ext.synchronized {
-      AADLExt_Ext.notifyAll()
+    AADLNative_Ext.synchronized {
+      AADLNative_Ext.notifyAll()
     }
 
     Console.in.readLine()

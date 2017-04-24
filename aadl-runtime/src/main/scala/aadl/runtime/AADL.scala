@@ -87,9 +87,9 @@ object AADL {
     AADLNative.sendOutput(eventPortIds, dataPortIds)
   }
 
-  def connect(from: PortId, to: PortId): Unit = {
-    connections(from) = to
-    AADLNative.logInfo(logTitle, s"Connected ports: $from -> $to")
+  def connect(from: Port, to: Port): Unit = {
+    connections(from.id) = to.id
+    AADLNative.logInfo(logTitle, s"Connected ports: ${from.name} -> ${to.name}")
   }
 }
 

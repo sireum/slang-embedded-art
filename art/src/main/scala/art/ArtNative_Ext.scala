@@ -1,27 +1,27 @@
-package aadl.runtime
+package art
 
 import org.sireum._
 
 import scala.collection.immutable.ListSet
 
-object AADLNative_Ext {
+object ArtNative_Ext {
   val slowdown = z64"100"
   var rates: ListSet[Z64] = ListSet()
-  var rateBridges: Map[Z64, ISZ[AADL.BridgeId]] = Map()
-  val eventPortVariables: scala.collection.mutable.Map[AADL.PortId, (Z64, Any)] = concMap()
-  val dataPortVariables: scala.collection.mutable.Map[AADL.PortId, (Z64, Any)] = concMap()
-  val receivedPortValues: scala.collection.mutable.Map[AADL.PortId, Any] = concMap()
-  val sentPortValues: scala.collection.mutable.Map[AADL.PortId, Any] = concMap()
+  var rateBridges: Map[Z64, ISZ[Art.BridgeId]] = Map()
+  val eventPortVariables: scala.collection.mutable.Map[Art.PortId, (Z64, Any)] = concMap()
+  val dataPortVariables: scala.collection.mutable.Map[Art.PortId, (Z64, Any)] = concMap()
+  val receivedPortValues: scala.collection.mutable.Map[Art.PortId, Any] = concMap()
+  val sentPortValues: scala.collection.mutable.Map[Art.PortId, Any] = concMap()
 
-  def dispatchStatus(bridgeId: AADL.BridgeId): Option[AADL.PortId] = {
-    val is = AADL.bridges(bridgeId).ports.mode(PortMode.EventIn).elements.map(_.id).filter(eventPortVariables.contains)
+  def dispatchStatus(bridgeId: Art.BridgeId): Option[Art.PortId] = {
+    val is = Art.bridges(bridgeId).ports.mode(PortMode.EventIn).elements.map(_.id).filter(eventPortVariables.contains)
     is.sortBy(p => eventPortVariables(p)._1.value).headOption match {
       case scala.Some(in) => Some(in)
       case _ => None()
     }
   }
 
-  def receiveInput(eventPortIdOpt: Option[AADL.PortId], dataPortIds: ISZ[AADL.PortId]): Unit = {
+  def receiveInput(eventPortIdOpt: Option[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
     for (portId <- eventPortIdOpt) {
       val v = eventPortVariables(portId)._2
       eventPortVariables -= portId
@@ -32,21 +32,21 @@ object AADLNative_Ext {
     }
   }
 
-  def putValue[T](portId: AADL.PortId, data: T): Unit = {
+  def putValue[T](portId: Art.PortId, data: T): Unit = {
     sentPortValues(portId) = data
   }
 
-  def getValue[T](portId: AADL.PortId): T = {
+  def getValue[T](portId: Art.PortId): T = {
     receivedPortValues(portId).asInstanceOf[T]
   }
 
-  def sendOutput(eventPortIds: ISZ[AADL.PortId], dataPortIds: ISZ[AADL.PortId]): Unit = {
+  def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
     val time = toZ64(System.currentTimeMillis())
     for (portId <- eventPortIds; v <- sentPortValues.get(portId)) {
-      eventPortVariables(AADL.connections(portId)) = (time, v)
+      eventPortVariables(Art.connections(portId)) = (time, v)
     }
     for (portId <- dataPortIds; v <- sentPortValues.get(portId)) {
-      dataPortVariables(AADL.connections(portId)) = (time, v)
+      dataPortVariables(Art.connections(portId)) = (time, v)
     }
     for (portId <- eventPortIds) {
       sentPortValues -= portId
@@ -56,11 +56,11 @@ object AADLNative_Ext {
     }
   }
 
-  def logInfo(bridgeId: AADL.BridgeId, msg: String): Unit = logInfo(AADL.bridges(bridgeId).name, msg)
+  def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = logInfo(Art.bridges(bridgeId).name, msg)
 
-  def logError(bridgeId: AADL.BridgeId, msg: String): Unit = logError(AADL.bridges(bridgeId).name, msg)
+  def logError(bridgeId: Art.BridgeId, msg: String): Unit = logError(Art.bridges(bridgeId).name, msg)
 
-  def logDebug(bridgeId: AADL.BridgeId, msg: String): Unit = logDebug(AADL.bridges(bridgeId).name, msg)
+  def logDebug(bridgeId: Art.BridgeId, msg: String): Unit = logDebug(Art.bridges(bridgeId).name, msg)
 
   def logInfo(title: String, msg: String): Unit = log("info", title, msg)
 
@@ -79,7 +79,7 @@ object AADLNative_Ext {
   }
 
   def run(): Unit = {
-    for (bridge <- AADL.bridges) bridge.dispatchProtocol match {
+    for (bridge <- Art.bridges) bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
         val rate = N32.toZ64(period)
         rates += rate
@@ -89,7 +89,7 @@ object AADLNative_Ext {
 
     require(rates.nonEmpty)
 
-    for (bridge <- AADL.bridges) {
+    for (bridge <- Art.bridges) {
       bridge.dispatchProtocol match {
         case DispatchPropertyProtocol.Periodic(_) =>
         case DispatchPropertyProtocol.Sporadic(min) =>
@@ -102,43 +102,43 @@ object AADLNative_Ext {
           rateBridges += rate -> (rateBridges.getOrElse(rate, ISZ()) :+ bridge.id)
       }
       bridge.entryPoints.initialise()
-      logInfo(AADL.logTitle, s"Initialized bridge: ${bridge.name}")
+      logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
     }
 
     var terminated = false
     var numTerminated = 0
-    var hyperPeriod: Z64 = slowdown
+    var hyperPeriod = slowdown
     for (rate <- rates) {
       hyperPeriod *= rate
       new Thread(() => {
-        logInfo(AADL.logTitle, s"Thread for rate group $rate instantiated.")
-        AADLNative_Ext.synchronized {
-          AADLNative_Ext.wait()
+        logInfo(Art.logTitle, s"Thread for rate group $rate instantiated.")
+        ArtNative_Ext.synchronized {
+          ArtNative_Ext.wait()
         }
         while (!terminated) {
           Thread.sleep((rate * slowdown).value)
-          var bridgesToCompute = List[AADL.BridgeId]()
+          var bridgesToCompute = List[Art.BridgeId]()
           for (bridgeId <- rateBridges(rate)) {
-            val bridge = AADL.bridges(bridgeId)
+            val bridge = Art.bridges(bridgeId)
             bridge.dispatchProtocol match {
               case DispatchPropertyProtocol.Periodic(_) => bridgesToCompute ::= bridgeId
               case DispatchPropertyProtocol.Sporadic(min) =>
                 val minRate = N32.toZ64(min).value
-                val lastSporadic = AADL.lastSporadic(bridgeId).value
+                val lastSporadic = Art.lastSporadic(bridgeId).value
                 if (System.currentTimeMillis() - lastSporadic < minRate) {
                   // skip
                 } else if (bridge.ports.mode(PortMode.EventIn).elements.map(_.id).exists(eventPortVariables.contains)) {
                   bridgesToCompute ::= bridgeId
-                  AADL.lastSporadic(bridgeId) = toZ64(System.currentTimeMillis())
+                  Art.lastSporadic(bridgeId) = toZ64(System.currentTimeMillis())
                 } else {
                   // skip
                 }
             }
           }
           for (bridgeId <- bridgesToCompute.par)
-            AADL.bridges(bridgeId).entryPoints.compute()
+            Art.bridges(bridgeId).entryPoints.compute()
         }
-        AADLNative_Ext.synchronized {
+        ArtNative_Ext.synchronized {
           numTerminated += 1
         }
       }).start()
@@ -146,9 +146,9 @@ object AADLNative_Ext {
 
     Thread.sleep(hyperPeriod.value)
 
-    logInfo(AADL.logTitle, s"Start execution...")
-    AADLNative_Ext.synchronized {
-      AADLNative_Ext.notifyAll()
+    logInfo(Art.logTitle, s"Start execution...")
+    ArtNative_Ext.synchronized {
+      ArtNative_Ext.notifyAll()
     }
 
     Console.in.readLine()
@@ -157,11 +157,11 @@ object AADLNative_Ext {
     while (numTerminated != rates.size) {
       Thread.sleep(hyperPeriod.value)
     }
-    logInfo(AADL.logTitle, s"End execution...")
+    logInfo(Art.logTitle, s"End execution...")
 
-    for (bridge <- AADL.bridges) {
+    for (bridge <- Art.bridges) {
       bridge.entryPoints.finalise()
-      logInfo(AADL.logTitle, s"Finalized bridge: ${bridge.name}")
+      logInfo(Art.logTitle, s"Finalized bridge: ${bridge.name}")
     }
   }
 

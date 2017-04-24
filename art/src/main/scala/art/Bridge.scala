@@ -1,11 +1,11 @@
 // #Sireum
 
-package aadl.runtime
+package art
 
 import org.sireum._
 
 @sig trait Bridge {
-  def id: AADL.BridgeId
+  def id: Art.BridgeId
 
   def name: String
 

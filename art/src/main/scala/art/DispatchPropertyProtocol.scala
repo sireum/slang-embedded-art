@@ -1,6 +1,6 @@
 // #Sireum
 
-package aadl.runtime
+package art
 
 import org.sireum._
 

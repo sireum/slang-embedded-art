@@ -1,6 +1,6 @@
 // #Sireum
 
-package aadl.runtime
+package art
 
 import org.sireum._
 
@@ -11,6 +11,6 @@ import org.sireum._
   'EventOut
 }
 
-@datatype class Port(id: AADL.PortId,
+@datatype class Port(id: Art.PortId,
                      name: String,
                      mode: PortMode.Type)

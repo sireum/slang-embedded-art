@@ -53,7 +53,7 @@ object Art {
       case DispatchPropertyProtocol.Sporadic(min) =>
         ArtNative.logInfo(logTitle, s"Registered bridge: ${bridge.name} (sporadic: $min)")
     }
-    for (port <- bridge.ports.all) {
+    for (port <- bridge.ports) {
       port.mode match {
         case PortMode.DataIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data in)")
         case PortMode.DataOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data out)")
@@ -90,6 +90,19 @@ object Art {
   def connect(from: Port, to: Port): Unit = {
     connections(from.id) = to.id
     ArtNative.logInfo(logTitle, s"Connected ports: ${from.name} -> ${to.name}")
+  }
+
+  def run(system: ArchitectureDescription): Unit = {
+
+    for (component <- system.components) {
+      register(component)
+    }
+
+    for (connection <- system.connections) {
+      connect(connection.from, connection.to)
+    }
+
+    ArtNative.run()
   }
 }
 

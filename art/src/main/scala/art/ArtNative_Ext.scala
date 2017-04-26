@@ -14,7 +14,7 @@ object ArtNative_Ext {
   val sentPortValues: scala.collection.mutable.Map[Art.PortId, Any] = concMap()
 
   def dispatchStatus(bridgeId: Art.BridgeId): Option[Art.PortId] = {
-    val is = Ports(Art.bridges(bridgeId).ports).mode(PortMode.EventIn).elements.map(_.id).filter(eventPortVariables.contains)
+    val is = Art.bridges(bridgeId).ports.eventIns.elements.map(_.id).filter(eventPortVariables.contains)
     is.sortBy(p => eventPortVariables(p)._1.value).headOption match {
       case scala.Some(in) => Some(in)
       case _ => None()
@@ -127,7 +127,7 @@ object ArtNative_Ext {
                 val lastSporadic = Art.lastSporadic(bridgeId).value
                 if (System.currentTimeMillis() - lastSporadic < minRate) {
                   // skip
-                } else if (Ports(bridge.ports).mode(PortMode.EventIn).elements.map(_.id).exists(eventPortVariables.contains)) {
+                } else if (bridge.ports.eventIns.elements.map(_.id).exists(eventPortVariables.contains)) {
                   bridgesToCompute ::= bridgeId
                   Art.lastSporadic(bridgeId) = toZ64(System.currentTimeMillis())
                 } else {

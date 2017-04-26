@@ -29,7 +29,7 @@ import org.sireum._
 
   def name: String
 
-  def ports: ISZ[Port]
+  def ports: Bridge.Ports
 
   def entryPoints: Bridge.EntryPoints
 
@@ -54,18 +54,11 @@ object Bridge {
     def finalise(): Unit
   }
 
-  @rich class Ports(ports: ISZ[Port]) {
-    def mode(m: PortMode.Type): ISZ[Port] = {
-      var r = ISZ[Port]()
-      for (port <- ports) {
-        if (port.mode == m) {
-          r = r :+ port
-        }
-      }
-      return r
-    }
-  }
-
+  @datatype class Ports(all: ISZ[Port],
+                        dataIns: ISZ[Port],
+                        dataOuts: ISZ[Port],
+                        eventIns: ISZ[Port],
+                        eventOuts: ISZ[Port])
 }
 
 

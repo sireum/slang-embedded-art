@@ -53,7 +53,7 @@ object Art {
       case DispatchPropertyProtocol.Sporadic(min) =>
         ArtNative.logInfo(logTitle, s"Registered bridge: ${bridge.name} (sporadic: $min)")
     }
-    for (port <- bridge.ports) {
+    for (port <- bridge.ports.all) {
       port.mode match {
         case PortMode.DataIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data in)")
         case PortMode.DataOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data out)")

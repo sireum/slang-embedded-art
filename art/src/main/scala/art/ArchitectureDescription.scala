@@ -76,3 +76,13 @@ object DispatchPropertyProtocol {
 
   // @datatype class Hybrid() extends DispatchPropertyProtocol
 }
+
+
+@sig trait DataContent {
+  def nonEmpty: B
+}
+
+
+@datatype class EmptyDataContent extends DataContent {
+  def nonEmpty: B = F
+}

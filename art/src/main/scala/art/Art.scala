@@ -13,31 +13,35 @@ object Art {
   val logTitle: String = "Art"
   val initIdVal: BridgeId = n32"0"
   val noTime: Time = z64"0"
-  val noTimeEmptyContent: (Time, DataContent) = (noTime, EmptyDataContent())
   var bridgeIds: BridgeId = initIdVal
   var portIds: PortId = initIdVal
   var maxPorts: PortId = initIdVal
   var maxComponents: BridgeId = initIdVal
-  var bridges: MS[BridgeId, Bridge] = MS[BridgeId, Bridge]()
+  var bridges: MS[BridgeId, Option[Bridge]] = MS[BridgeId, Option[Bridge]]()
   var connections: MS[PortId, PortId] = MS[PortId, PortId]()
   var lastSporadic: MS[BridgeId, Time] = MS[BridgeId, Time]()
-  var eventPortVariables: MS[PortId, TimedDataContent] = MS[PortId, TimedDataContent]()
-  var dataPortVariables: MS[PortId, TimedDataContent] = MS[PortId, TimedDataContent]()
-  var receivedPortValues: MS[PortId, DataContent] = MS[PortId, DataContent]()
-  var sentPortValues: MS[PortId, DataContent] = MS[PortId, DataContent]()
+  var eventPortVariables:  MS[PortId, Option[TimedDataContent]] = MS[PortId, Option[TimedDataContent]]()
+  var dataPortVariables: MS[PortId, Option[TimedDataContent]] = MS[PortId, Option[TimedDataContent]]()
+  var receivedPortValues: MS[PortId, Option[DataContent]] = MS[PortId, Option[DataContent]]()
+  var sentPortValues: MS[PortId, Option[DataContent]] = MS[PortId, Option[DataContent]]()
 
   def initialise(numOfComponents: Z, numOfPorts: Z): Unit = {
     portIds = initIdVal
     bridgeIds = initIdVal
     maxComponents = Z.toN32(numOfComponents)
     maxPorts = Z.toN32(numOfPorts)
-    bridges = MS[BridgeId, Bridge]()
+    bridges = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
     lastSporadic = MS.create[BridgeId, Time](maxComponents, noTime)
-    connections = MS.create[PortId, PortId](maxPorts, initIdVal)
-    eventPortVariables = MS.create[PortId, TimedDataContent](maxPorts, noTimeEmptyContent)
-    dataPortVariables = MS.create[PortId, TimedDataContent](maxPorts, noTimeEmptyContent)
-    receivedPortValues = MS.create[PortId, DataContent](maxPorts, EmptyDataContent())
-    sentPortValues = MS.create[PortId, DataContent](maxPorts, EmptyDataContent())
+    connections = MS.create[PortId, PortId](maxPorts, N32.Max)
+    eventPortVariables = MS.create[PortId, Option[TimedDataContent]](maxPorts, None[TimedDataContent]())
+    dataPortVariables = MS.create[PortId, Option[TimedDataContent]](maxPorts, None[TimedDataContent]())
+    receivedPortValues = MS.create[PortId, Option[DataContent]](maxPorts, None[DataContent]())
+    sentPortValues = MS.create[PortId, Option[DataContent]](maxPorts, None[DataContent]())
+  }
+
+  def bridge(bridgeId: BridgeId): Bridge = {
+    val Some(r) = bridges(bridgeId)
+    return r
   }
 
   def freshPortId(name: String): PortId = {
@@ -58,7 +62,7 @@ object Art {
 
   def register(bridge: Bridge): Unit = {
     l"""{ requires bridgeIds < maxBridges }"""
-    bridges = bridges :+ bridge
+    bridges(bridge.id) = Some(bridge)
     bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
         ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (periodic: $period)")
@@ -78,65 +82,78 @@ object Art {
   // can't find definition in the standard ??
   def dispatchStatus(bridgeId: Art.BridgeId): Option[PortId] = { // DISPATCH_STATUS
     var minPortId = n32"0"
-    var minTime = noTime
-    for (port <- Art.bridges(bridgeId).ports.eventIns) {
+    var minTime = Z64.Max
+    for (port <- bridge(bridgeId).ports.eventIns) {
       val portId = port.id
-      val (time, data) = eventPortVariables(portId)
-      if (data.nonEmpty & (minTime == noTime | time < minTime)) {
-        minTime = time
-        minPortId = portId
+      eventPortVariables(portId) match {
+        case Some((time, data)) =>
+          if (time < minTime) {
+            minTime = time
+            minPortId = portId
+          }
+        case _ =>
       }
     }
-    return if (minTime == noTime) None[PortId]() else Some(minPortId)
+    return if (minTime == Z64.Max) None[PortId]() else Some(minPortId)
   }
 
   def receiveInput(eventPortIdOpt: Option[PortId], dataPortIds: ISZ[PortId]): Unit = { // RECEIVE_INPUT
     for (portId <- eventPortIdOpt) {
-      val v = eventPortVariables(portId)._2
-      eventPortVariables(portId) = noTimeEmptyContent
-      receivedPortValues(portId) = v
+      eventPortVariables(portId) match {
+        case Some((_, data)) =>
+          eventPortVariables(portId) = None[TimedDataContent]()
+          receivedPortValues(portId) = Some(data)
+        case _ =>
+      }
     }
     for (portId <- dataPortIds) {
-      receivedPortValues(portId) = dataPortVariables(portId)._2
+      dataPortVariables(portId) match {
+        case Some((_, data)) =>
+          receivedPortValues(portId) = Some(data)
+        case _ =>
+      }
     }
   }
 
   def putValue(portId: PortId, data: DataContent): Unit = { // PUT_VALUE
-    sentPortValues(portId) = data
+    sentPortValues(portId) = Some(data)
   }
 
   def getValue(portId: PortId): DataContent = { // GET_VALUE
-    return receivedPortValues(portId)
+    val Some(data) = receivedPortValues(portId)
+    return data
   }
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
     val time = ArtNative.time()
     for (portId <- eventPortIds) {
-      val data = sentPortValues(portId)
-      if (data.nonEmpty) {
-        eventPortVariables(Art.connections(portId)) = (time, data)
-        sentPortValues(portId) = EmptyDataContent()
+      sentPortValues(portId) match {
+        case Some(data) =>
+          eventPortVariables(Art.connections(portId)) = Some((time, data))
+          sentPortValues(portId) = None[DataContent]()
+        case _ =>
       }
     }
     for (portId <- eventPortIds) {
-      val data = sentPortValues(portId)
-      if (data.nonEmpty) {
-        dataPortVariables(Art.connections(portId)) = (time, data)
-        sentPortValues(portId) = EmptyDataContent()
+      sentPortValues(portId) match {
+        case Some(data) =>
+          dataPortVariables(Art.connections(portId)) = Some((time, data))
+          sentPortValues(portId) = None[DataContent]()
+        case _ =>
       }
     }
   }
 
   def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = {
-    ArtNative.logInfo(bridges(bridgeId).name, msg)
+    ArtNative.logInfo(bridge(bridgeId).name, msg)
   }
 
   def logError(bridgeId: Art.BridgeId, msg: String): Unit = {
-    ArtNative.logError(bridges(bridgeId).name, msg)
+    ArtNative.logError(bridge(bridgeId).name, msg)
   }
 
   def logDebug(bridgeId: Art.BridgeId, msg: String): Unit = {
-    ArtNative.logDebug(bridges(bridgeId).name, msg)
+    ArtNative.logDebug(bridge(bridgeId).name, msg)
   }
 
 

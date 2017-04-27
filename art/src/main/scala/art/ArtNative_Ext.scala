@@ -12,13 +12,17 @@ object ArtNative_Ext {
   def time(): Art.Time = toZ64(System.currentTimeMillis())
 
   def run(): Unit = {
+    require(Art.bridges.elements.forall(_.nonEmpty))
+
+    val bridges = Art.bridges.elements.map({ case Some(b) => b })
+
     import scala.collection.immutable.ListSet
 
     val slowdown = z64"100"
     var rates: ListSet[Z64] = ListSet()
     var rateBridges: Map[Z64, ISZ[Art.BridgeId]] = Map()
 
-    for (bridge <- Art.bridges) bridge.dispatchProtocol match {
+    for (bridge <- bridges) bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
         val rate = N32.toZ64(period)
         rates += rate
@@ -28,7 +32,7 @@ object ArtNative_Ext {
 
     require(rates.nonEmpty)
 
-    for (bridge <- Art.bridges) {
+    for (bridge <- bridges) {
       bridge.dispatchProtocol match {
         case DispatchPropertyProtocol.Periodic(_) =>
         case DispatchPropertyProtocol.Sporadic(min) =>
@@ -58,7 +62,7 @@ object ArtNative_Ext {
           Thread.sleep((rate * slowdown).value)
           var bridgesToCompute = List[Art.BridgeId]()
           for (bridgeId <- rateBridges(rate)) {
-            val bridge = Art.bridges(bridgeId)
+            val bridge = Art.bridge(bridgeId)
             bridge.dispatchProtocol match {
               case DispatchPropertyProtocol.Periodic(_) => bridgesToCompute ::= bridgeId
               case DispatchPropertyProtocol.Sporadic(min) =>
@@ -66,7 +70,7 @@ object ArtNative_Ext {
                 val lastSporadic = Art.lastSporadic(bridgeId)
                 if (time() - lastSporadic < minRate) {
                   // skip
-                } else if (bridge.ports.eventIns.elements.exists(p => Art.eventPortVariables(p.id)._2.nonEmpty)) {
+                } else if (bridge.ports.eventIns.elements.exists(p => Art.eventPortVariables(p.id).nonEmpty)) {
                   bridgesToCompute ::= bridgeId
                   Art.lastSporadic(bridgeId) = time()
                 } else {
@@ -75,7 +79,7 @@ object ArtNative_Ext {
             }
           }
           for (bridgeId <- bridgesToCompute.par)
-            Art.bridges(bridgeId).entryPoints.compute()
+            Art.bridge(bridgeId).entryPoints.compute()
         }
         ArtNative_Ext.synchronized {
           numTerminated += 1
@@ -98,7 +102,7 @@ object ArtNative_Ext {
     }
     logInfo(Art.logTitle, s"End execution...")
 
-    for (bridge <- Art.bridges) {
+    for (bridge <- bridges) {
       bridge.entryPoints.finalise()
       logInfo(Art.logTitle, s"Finalized bridge: ${bridge.name}")
     }

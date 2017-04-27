@@ -8,55 +8,28 @@ object Art {
   type PortId = N32
   type BridgeId = N32
   type Time = Z64
-  type TimedDataContent = (Time, DataContent)
+  type TimedContent = (Time, DataContent)
+
+  val maxComponents: PortId = n32"3" // constant set during instantiation, must be < N32.Max
+  val maxPorts: PortId = n32"7" // constant set during instantiation, must be < N32.Max
+
+  val noTime: Time = z64"0"
 
   val logTitle: String = "Art"
-  val initIdVal: BridgeId = n32"0"
-  val noTime: Time = z64"0"
-  var bridgeIds: BridgeId = initIdVal
-  var portIds: PortId = initIdVal
-  var maxPorts: PortId = initIdVal
-  var maxComponents: BridgeId = initIdVal
-  var bridges: MS[BridgeId, Option[Bridge]] = MS[BridgeId, Option[Bridge]]()
-  var connections: MS[PortId, PortId] = MS[PortId, PortId]()
-  var lastSporadic: MS[BridgeId, Time] = MS[BridgeId, Time]()
-  var eventPortVariables:  MS[PortId, Option[TimedDataContent]] = MS[PortId, Option[TimedDataContent]]()
-  var dataPortVariables: MS[PortId, Option[TimedDataContent]] = MS[PortId, Option[TimedDataContent]]()
-  var receivedPortValues: MS[PortId, Option[DataContent]] = MS[PortId, Option[DataContent]]()
-  var sentPortValues: MS[PortId, Option[DataContent]] = MS[PortId, Option[DataContent]]()
-
-  def initialise(numOfComponents: Z, numOfPorts: Z): Unit = {
-    portIds = initIdVal
-    bridgeIds = initIdVal
-    maxComponents = Z.toN32(numOfComponents)
-    maxPorts = Z.toN32(numOfPorts)
-    bridges = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
-    lastSporadic = MS.create[BridgeId, Time](maxComponents, noTime)
-    connections = MS.create[PortId, PortId](maxPorts, N32.Max)
-    eventPortVariables = MS.create[PortId, Option[TimedDataContent]](maxPorts, None[TimedDataContent]())
-    dataPortVariables = MS.create[PortId, Option[TimedDataContent]](maxPorts, None[TimedDataContent]())
-    receivedPortValues = MS.create[PortId, Option[DataContent]](maxPorts, None[DataContent]())
-    sentPortValues = MS.create[PortId, Option[DataContent]](maxPorts, None[DataContent]())
-  }
+  val bridges: MS[BridgeId, Option[Bridge]] = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
+  val connections: MS[PortId, PortId] = MS.create[PortId, PortId](maxPorts, N32.Max)
+  val lastSporadic: MS[BridgeId, Time] = MS.create[BridgeId, Time](maxComponents, noTime)
+  val eventPortVariables: MS[PortId, Option[TimedContent]] =
+    MS.create[PortId, Option[TimedContent]](maxPorts, None[TimedContent]())
+  val dataPortVariables: MS[PortId, Option[TimedContent]] =
+    MS.create[PortId, Option[TimedContent]](maxPorts, None[TimedContent]())
+  val receivedPortValues: MS[PortId, Option[DataContent]] =
+    MS.create[PortId, Option[DataContent]](maxPorts, None[DataContent]())
+  val sentPortValues: MS[PortId, Option[DataContent]] =
+    MS.create[PortId, Option[DataContent]](maxPorts, None[DataContent]())
 
   def bridge(bridgeId: BridgeId): Bridge = {
     val Some(r) = bridges(bridgeId)
-    return r
-  }
-
-  def freshPortId(name: String): PortId = {
-    l"""{ requires portIds < maxPorts }"""
-    val r = portIds
-    portIds = r + n32"1"
-    ArtNative.logInfo(logTitle, s"Created port id $r for $name")
-    return r
-  }
-
-  def freshBridgeId(name: String): BridgeId = {
-    l"""{ requires bridgeIds < maxBridges }"""
-    val r = bridgeIds
-    bridgeIds = r + n32"1"
-    ArtNative.logInfo(logTitle, s"Created bridge id $r for $name")
     return r
   }
 
@@ -86,7 +59,7 @@ object Art {
     for (port <- bridge(bridgeId).ports.eventIns) {
       val portId = port.id
       eventPortVariables(portId) match {
-        case Some((time, data)) =>
+        case Some((time, _)) =>
           if (time < minTime) {
             minTime = time
             minPortId = portId
@@ -101,7 +74,7 @@ object Art {
     for (portId <- eventPortIdOpt) {
       eventPortVariables(portId) match {
         case Some((_, data)) =>
-          eventPortVariables(portId) = None[TimedDataContent]()
+          eventPortVariables(portId) = None[TimedContent]()
           receivedPortValues(portId) = Some(data)
         case _ =>
       }
@@ -155,7 +128,6 @@ object Art {
   def logDebug(bridgeId: Art.BridgeId, msg: String): Unit = {
     ArtNative.logDebug(bridge(bridgeId).name, msg)
   }
-
 
   def connect(from: Port, to: Port): Unit = {
     connections(from.id) = to.id

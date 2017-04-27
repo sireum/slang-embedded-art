@@ -134,6 +134,28 @@ object Art {
     ArtNative.logInfo(logTitle, s"Connected ports: ${from.name} -> ${to.name}")
   }
 
+  def shouldDispatch(bridgeId: BridgeId): B = {
+    val b = bridge(bridgeId)
+    b.dispatchProtocol match {
+      case DispatchPropertyProtocol.Periodic(_) => return T
+      case DispatchPropertyProtocol.Sporadic(min) =>
+        val minRate = N32.toZ64(min)
+        val lastSporadic = Art.lastSporadic(bridgeId)
+        val time = ArtNative.time()
+        if (time - lastSporadic < minRate) {
+          return F
+        } else {
+          for (port <- b.ports.eventIns) {
+            eventPortVariables(port.id) match {
+              case Some((_, _)) => return T
+              case _ =>
+            }
+          }
+          return F
+        }
+    }
+  }
+
   def run(system: ArchitectureDescription): Unit = {
 
     for (component <- system.components) {

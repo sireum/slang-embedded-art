@@ -60,25 +60,7 @@ object ArtNative_Ext {
         }
         while (!terminated) {
           Thread.sleep((rate * slowdown).value)
-          var bridgesToCompute = List[Art.BridgeId]()
-          for (bridgeId <- rateBridges(rate)) {
-            val bridge = Art.bridge(bridgeId)
-            bridge.dispatchProtocol match {
-              case DispatchPropertyProtocol.Periodic(_) => bridgesToCompute ::= bridgeId
-              case DispatchPropertyProtocol.Sporadic(min) =>
-                val minRate = N32.toZ64(min)
-                val lastSporadic = Art.lastSporadic(bridgeId)
-                if (time() - lastSporadic < minRate) {
-                  // skip
-                } else if (bridge.ports.eventIns.elements.exists(p => Art.eventPortVariables(p.id).nonEmpty)) {
-                  bridgesToCompute ::= bridgeId
-                  Art.lastSporadic(bridgeId) = time()
-                } else {
-                  // skip
-                }
-            }
-          }
-          for (bridgeId <- bridgesToCompute.par)
+          for (bridgeId <- rateBridges(rate).elements.filter(Art.shouldDispatch))
             Art.bridge(bridgeId).entryPoints.compute()
         }
         ArtNative_Ext.synchronized {

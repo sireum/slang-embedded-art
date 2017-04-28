@@ -66,11 +66,11 @@ object Bridge {
 
 object DispatchPropertyProtocol {
 
-  @datatype class Periodic(period: N32 /* hertz */) extends DispatchPropertyProtocol
+  @datatype class Periodic(period: Z /* hertz */) extends DispatchPropertyProtocol
 
   // @datatype class Aperiodic() extends DispatchPropertyProtocol
 
-  @datatype class Sporadic(min: N32) extends DispatchPropertyProtocol
+  @datatype class Sporadic(min: Z) extends DispatchPropertyProtocol
 
   // @datatype class Timed() extends DispatchPropertyProtocol
 
@@ -78,6 +78,4 @@ object DispatchPropertyProtocol {
 }
 
 
-@sig trait DataContent {
-  def nonEmpty: B
-}
+@sig trait DataContent

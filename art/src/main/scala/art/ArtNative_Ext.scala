@@ -2,66 +2,121 @@ package art
 
 import org.sireum._
 
+import scala.collection.mutable.{Map => MMap}
+
 object ArtNative_Ext {
+  type Time = Z
+
+  val noTime: Time = 0
+
+  val lastSporadic: MMap[Art.BridgeId, Time] = concMap()
+  val eventPortVariables: MMap[Art.PortId, DataContent] = concMap()
+  val dataPortVariables: MMap[Art.PortId, DataContent] = concMap()
+  val receivedPortValues: MMap[Art.PortId, DataContent] = concMap()
+  val sentPortValues: MMap[Art.PortId, DataContent] = concMap()
+
+  def dispatchStatus(bridgeId: Art.BridgeId): Option[ISZ[Art.PortId]] = {
+    val r = Art.bridge(bridgeId).ports.eventIns.elements.map(_.id).filter(eventPortVariables.get(_).nonEmpty)
+    if (r.isEmpty) None[ISZ[Art.PortId]]() else Some(ISZ(r: _*))
+  }
+
+  def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
+    for (portId <- eventPortIds) {
+      eventPortVariables.get(portId) match {
+        case scala.Some(data) =>
+          eventPortVariables -= portId
+          receivedPortValues(portId) = data
+        case _ =>
+      }
+    }
+    for (portId <- dataPortIds) {
+      dataPortVariables.get(portId) match {
+        case scala.Some(data) =>
+          receivedPortValues(portId) = data
+        case _ =>
+      }
+    }
+  }
+
+  def putValue(portId: Art.PortId, data: DataContent): Unit = {
+    sentPortValues(portId) = data
+  }
+
+  def getValue(portId: Art.PortId): DataContent = {
+    val data = receivedPortValues(portId)
+    return data
+  }
+
+  def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
+    for (portId <- eventPortIds) {
+      sentPortValues.get(portId) match {
+        case scala.Some(data) =>
+          eventPortVariables(Art.connections(portId)) = data
+          sentPortValues -= portId
+        case _ =>
+      }
+    }
+    for (portId <- eventPortIds) {
+      sentPortValues.get(portId) match {
+        case scala.Some(data) =>
+          dataPortVariables(Art.connections(portId)) = data
+          sentPortValues -= portId
+        case _ =>
+      }
+    }
+  }
+
   def logInfo(title: String, msg: String): Unit = log("info", title, msg)
 
   def logError(title: String, msg: String): Unit = log("error", title, msg)
 
   def logDebug(title: String, msg: String): Unit = log("debug", title, msg)
 
-  def time(): Art.Time = toZ64(System.currentTimeMillis())
+  def time(): Time = toZ(System.currentTimeMillis())
+
+  def shouldDispatch(bridgeId: Art.BridgeId): B = {
+    val b = Art.bridge(bridgeId)
+    b.dispatchProtocol match {
+      case DispatchPropertyProtocol.Periodic(_) => return T
+      case DispatchPropertyProtocol.Sporadic(minRate) =>
+        val ls = lastSporadic.getOrElse(bridgeId, noTime)
+        if (time() - ls < minRate) {
+          return F
+        } else {
+          return b.ports.eventIns.elements.exists(port => eventPortVariables.contains(port.id))
+        }
+    }
+  }
 
   def run(): Unit = {
     require(Art.bridges.elements.forall(_.nonEmpty))
 
     val bridges = Art.bridges.elements.map({ case Some(b) => b })
 
-    import scala.collection.immutable.ListSet
-
-    val slowdown = z64"100"
-    var rates: ListSet[Z64] = ListSet()
-    var rateBridges: Map[Z64, ISZ[Art.BridgeId]] = Map()
-
-    for (bridge <- bridges) bridge.dispatchProtocol match {
-      case DispatchPropertyProtocol.Periodic(period) =>
-        val rate = N32.toZ64(period)
-        rates += rate
-        rateBridges += rate -> (rateBridges.getOrElse(rate, ISZ()) :+ bridge.id)
-      case _ =>
-    }
-
-    require(rates.nonEmpty)
+    val slowdown: Z = 100
 
     for (bridge <- bridges) {
-      bridge.dispatchProtocol match {
-        case DispatchPropertyProtocol.Periodic(_) =>
-        case DispatchPropertyProtocol.Sporadic(min) =>
-          val minRate = N32.toZ64(min)
-          val (less, more) = rates.toVector.sortBy(_.value).map(r => (r - minRate, r)).partition(_._1 >= z64"0")
-          val rate = ((less.lastOption, more.headOption): @unchecked) match {
-            case (_, scala.Some((_, r))) => r
-            case (scala.Some((_, r)), _) => r
-          }
-          rateBridges += rate -> (rateBridges.getOrElse(rate, ISZ()) :+ bridge.id)
-      }
       bridge.entryPoints.initialise()
       logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
     }
 
     var terminated = false
     var numTerminated = 0
-    var hyperPeriod = slowdown
-    for (rate <- rates) {
-      hyperPeriod *= rate
+
+    for (bridge <- bridges) {
+      val rate = bridge.dispatchProtocol match {
+        case DispatchPropertyProtocol.Periodic(period) => period
+        case DispatchPropertyProtocol.Sporadic(min) => min
+      }
+
       new Thread(() => {
-        logInfo(Art.logTitle, s"Thread for rate group $rate instantiated.")
+        logInfo(Art.logTitle, s"Thread for ${bridge.name} instantiated.")
         ArtNative_Ext.synchronized {
           ArtNative_Ext.wait()
         }
         while (!terminated) {
-          Thread.sleep((rate * slowdown).value)
-          for (bridgeId <- rateBridges(rate).elements.filter(Art.shouldDispatch))
-            Art.bridge(bridgeId).entryPoints.compute()
+          Thread.sleep(Z.toZ64(rate * slowdown).value)
+          if (shouldDispatch(bridge.id)) bridge.entryPoints.compute()
         }
         ArtNative_Ext.synchronized {
           numTerminated += 1
@@ -69,7 +124,7 @@ object ArtNative_Ext {
       }).start()
     }
 
-    Thread.sleep(hyperPeriod.value)
+    Thread.sleep(1000)
 
     logInfo(Art.logTitle, s"Start execution...")
     ArtNative_Ext.synchronized {
@@ -79,8 +134,8 @@ object ArtNative_Ext {
     Console.in.readLine()
     terminated = true
 
-    while (numTerminated != rates.size) {
-      Thread.sleep(hyperPeriod.value)
+    while (numTerminated != bridges.size) {
+      Thread.sleep(1000)
     }
     logInfo(Art.logTitle, s"End execution...")
 
@@ -100,5 +155,10 @@ object ArtNative_Ext {
     Literal(Constant(raw)).toString
   }
 
-  def toZ64(value: Long): Z64 = org.sireum.math._Z64(value)
+  def toZ(value: Long): Z = org.sireum.math._Z(value)
+
+  def concMap[K, V](): MMap[K, V] = {
+    import scala.collection.JavaConverters._
+    new java.util.concurrent.ConcurrentHashMap[K, V].asScala
+  }
 }

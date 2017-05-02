@@ -6,7 +6,7 @@ import org.sireum._
 
 @ext object ArtNative {
 
-  def dispatchStatus(bridgeId: Art.BridgeId): Option[ISZ[Art.PortId]] = $
+  def dispatchStatus(bridgeId: Art.BridgeId): ISZ[Art.PortId] = $
 
   def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = $
 

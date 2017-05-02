@@ -21,7 +21,6 @@ object Art {
   }
 
   def register(bridge: Bridge): Unit = {
-    l"""{ requires bridgeIds < maxBridges }"""
     bridges(bridge.id) = Some(bridge)
     bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
@@ -40,7 +39,7 @@ object Art {
   }
 
   // can't find definition in the standard ??
-  def dispatchStatus(bridgeId: Art.BridgeId): Option[ISZ[PortId]] = { // DISPATCH_STATUS
+  def dispatchStatus(bridgeId: Art.BridgeId): ISZ[PortId] = { // DISPATCH_STATUS
     ArtNative.dispatchStatus(bridgeId)
   }
 

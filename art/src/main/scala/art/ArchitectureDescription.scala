@@ -6,9 +6,25 @@ import org.sireum._
 
 
 @record class ArchitectureDescription(components: MSZ[Bridge],
-                                      connections: ISZ[UConnection])
+                                      connections: ISZ[UConnection]) {
+  l"""{ invariant ∀i: (0 ..< components.size)
+                    ∀j: (0 ..< components.size)
+                      i ≠ j → components(i).id ≠ components(j).id
+
+                  ∀i: (0 ..< allPorts.size)
+                    ∀j: (0 ..< allPorts.size)
+                      i ≠ j → allPorts(i).id ≠ allPorts(j).id
+
+                    where allPorts = components.flatMap(c => c.ports.all)
+
+     }"""
+}
 
 @datatype trait UConnection {
+  l"""{ invariant from.mode = PortMode.DataOut  ∨ from.mode = PortMode.EventOut
+                  from.mode = PortMode.DataOut  ↔ to.mode = PortMode.DataIn
+                  from.mode = PortMode.EventOut ↔ to.mode = PortMode.EventIn    }"""
+
   def from: UPort
 
   def to: UPort

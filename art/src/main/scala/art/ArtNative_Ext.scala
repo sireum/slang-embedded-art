@@ -152,7 +152,7 @@ object ArtNative_Ext {
 
   def escape(raw: String): String = {
     import scala.reflect.runtime.universe._
-    Literal(Constant(raw)).toString
+    Literal(Constant(raw.value)).toString
   }
 
   def toZ(value: Long): Z = org.sireum.math._Z(value)

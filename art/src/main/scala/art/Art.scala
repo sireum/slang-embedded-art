@@ -72,7 +72,7 @@ object Art {
     ArtNative.logDebug(bridge(bridgeId).name, msg)
   }
 
-  def connect(from: Port, to: Port): Unit = {
+  def connect(from: UPort, to: UPort): Unit = {
     connections(from.id) = to.id
     ArtNative.logInfo(logTitle, s"Connected ports: ${from.name} -> ${to.name}")
   }

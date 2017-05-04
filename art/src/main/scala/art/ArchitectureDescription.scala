@@ -6,10 +6,16 @@ import org.sireum._
 
 
 @record class ArchitectureDescription(components: MSZ[Bridge],
-                                      connections: ISZ[Connection])
+                                      connections: ISZ[UConnection])
 
+@datatype trait UConnection {
+  def from: UPort
 
-@datatype class Connection(from: Port, to: Port)
+  def to: UPort
+}
+
+@datatype class Connection[T](from: Port[T], to: Port[T])
+  extends UConnection
 
 
 @enum object PortMode {
@@ -19,9 +25,18 @@ import org.sireum._
   'EventOut
 }
 
-@datatype class Port(id: Art.PortId,
-                     name: String,
-                     mode: PortMode.Type)
+@datatype trait UPort {
+  def id: Art.PortId
+
+  def name: String
+
+  def mode: PortMode.Type
+}
+
+@datatype class Port[T](id: Art.PortId,
+                        name: String,
+                        mode: PortMode.Type)
+  extends UPort
 
 
 @sig trait Bridge {
@@ -54,11 +69,12 @@ object Bridge {
     def finalise(): Unit
   }
 
-  @datatype class Ports(all: ISZ[Port],
-                        dataIns: ISZ[Port],
-                        dataOuts: ISZ[Port],
-                        eventIns: ISZ[Port],
-                        eventOuts: ISZ[Port])
+  @datatype class Ports(all: ISZ[UPort],
+                        dataIns: ISZ[UPort],
+                        dataOuts: ISZ[UPort],
+                        eventIns: ISZ[UPort],
+                        eventOuts: ISZ[UPort])
+
 }
 
 
@@ -66,7 +82,7 @@ object Bridge {
 
 object DispatchPropertyProtocol {
 
-  @datatype class Periodic(period: Z /* hertz */) extends DispatchPropertyProtocol
+  @datatype class Periodic(period: Z) extends DispatchPropertyProtocol
 
   // @datatype class Aperiodic() extends DispatchPropertyProtocol
 

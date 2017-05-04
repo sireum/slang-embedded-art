@@ -125,7 +125,7 @@ object ArtNative_Ext {
 
     Thread.sleep(1000)
 
-    logInfo(Art.logTitle, s"Start execution (press Enter to terminate) ...")
+    logInfo(Art.logTitle, s"Start execution (press Enter twice to terminate) ...")
 
     ArtNative_Ext.synchronized {
       ArtNative_Ext.notifyAll()

@@ -39,8 +39,8 @@ object Art {
   }
 
   // can't find definition in the standard ??
-  def dispatchStatus(bridgeId: Art.BridgeId): ISZ[PortId] = { // DISPATCH_STATUS
-    ArtNative.dispatchStatus(bridgeId)
+  def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = { // DISPATCH_STATUS
+    return ArtNative.dispatchStatus(bridgeId)
   }
 
   def receiveInput(eventPortIds: ISZ[PortId], dataPortIds: ISZ[PortId]): Unit = { // RECEIVE_INPUT

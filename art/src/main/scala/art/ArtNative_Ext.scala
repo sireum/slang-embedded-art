@@ -15,8 +15,9 @@ object ArtNative_Ext {
   val receivedPortValues: MMap[Art.PortId, DataContent] = concMap()
   val sentPortValues: MMap[Art.PortId, DataContent] = concMap()
 
-  def dispatchStatus(bridgeId: Art.BridgeId): ISZ[Art.PortId] = {
-    ISZ(Art.bridge(bridgeId).ports.eventIns.elements.map(_.id).filter(eventPortVariables.get(_).nonEmpty): _*)
+  def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
+    val portIds = ISZ[Art.PortId](Art.bridge(bridgeId).ports.eventIns.elements.map(_.id).filter(eventPortVariables.get(_).nonEmpty): _*)
+    if (portIds.isEmpty) TimeTriggered() else EventTriggered(portIds)
   }
 
   def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {

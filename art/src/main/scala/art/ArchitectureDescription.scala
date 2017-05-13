@@ -111,3 +111,9 @@ object DispatchPropertyProtocol {
 
 
 @sig trait DataContent
+
+@datatype trait DispatchStatus
+
+@datatype class TimeTriggered() extends DispatchStatus
+
+@datatype class EventTriggered(portIds: ISZ[Art.PortId]) extends DispatchStatus

@@ -7,23 +7,30 @@ import org.sireum._
 
 @record class ArchitectureDescription(components: MSZ[Bridge],
                                       connections: ISZ[UConnection]) {
-  l"""{ invariant ∀i: (0 ..< components.size)
-                    ∀j: (0 ..< components.size)
+  @spec val allPorts: ISZ[UPort] = $
+
+  @spec def allPortsSpec(i: Z): ISZ[UPort] = l"""
+    = base:  ISZ[UPort](), if i == 0
+    = rec:   components(i).ports.all ++ allPorts(i - 1), if 0 < i ∧ i < components.size
+  """
+
+  l""" invariant allPorts ≡ allPortsSpec(components.size - 1)
+
+                 ∀i: [0, components.size)
+                    ∀j: [0, components.size)
                       i ≠ j → components(i).id ≠ components(j).id
 
-                  ∀i: (0 ..< allPorts.size)
-                    ∀j: (0 ..< allPorts.size)
-                      i ≠ j → allPorts(i).id ≠ allPorts(j).id
+                 ∀i: [0, allPorts.size)
+                   ∀j: [0, allPorts.size)
+                     i ≠ j → allPorts(i).id ≠ allPorts(j).id
+   """
 
-                    where allPorts = components.flatMap(c => c.ports.all)
-
-     }"""
 }
 
 @datatype trait UConnection {
-  l"""{ invariant from.mode = PortMode.DataOut  ∨ from.mode = PortMode.EventOut
-                  from.mode = PortMode.DataOut  ↔ to.mode = PortMode.DataIn
-                  from.mode = PortMode.EventOut ↔ to.mode = PortMode.EventIn    }"""
+  l""" invariant    from.mode ≡ PortMode.DataOut ∨ from.mode ≡ PortMode.EventOut
+                  (from.mode ≡ PortMode.DataOut) ≡ (to.mode ≡ PortMode.DataIn)
+                 (from.mode ≡ PortMode.EventOut) ≡ (to.mode ≡ PortMode.EventIn)  """
 
   def from: UPort
 

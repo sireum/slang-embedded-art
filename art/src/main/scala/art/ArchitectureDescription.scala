@@ -62,7 +62,7 @@ import org.sireum._
   extends UPort
 
 
-@sig trait Bridge {
+@msig trait Bridge {
   def id: Art.BridgeId
 
   def name: String
@@ -78,7 +78,8 @@ import org.sireum._
 object Bridge {
 
   // initialise()  ( compute() | activate() deactivate() | recover() )* finalise()
-  @sig trait EntryPoints {
+  @msig trait EntryPoints {
+
     def initialise(): Unit
 
     def activate(): Unit

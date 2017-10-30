@@ -115,7 +115,7 @@ object ArtNative_Ext {
           ArtNative_Ext.wait()
         }
         while (!terminated) {
-          Thread.sleep(Z.toZ64(rate * slowdown).value)
+          Thread.sleep((rate * slowdown).toMP.toLong)
           if (shouldDispatch(bridge.id)) bridge.entryPoints.compute()
         }
         ArtNative_Ext.synchronized {
@@ -156,7 +156,7 @@ object ArtNative_Ext {
     Literal(Constant(raw.value)).toString
   }
 
-  def toZ(value: Long): Z = org.sireum.math._Z(value)
+  def toZ(value: Long): Z = Z(value)
 
   def concMap[K, V](): MMap[K, V] = {
     import scala.collection.JavaConverters._

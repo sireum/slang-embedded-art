@@ -13,7 +13,7 @@ object Art {
 
   val logTitle: String = "Art"
   val bridges: MS[BridgeId, Option[Bridge]] = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
-  val connections: MS[PortId, PortId] = MS.create[PortId, PortId](maxPorts, Z32.toZ(Z32.Max))
+  val connections: MS[PortId, PortId] = MS.create[PortId, PortId](maxPorts, 2147483647)
 
   def bridge(bridgeId: BridgeId): Bridge = {
     val Some(r) = bridges(bridgeId)

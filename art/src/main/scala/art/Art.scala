@@ -8,8 +8,8 @@ object Art {
   type PortId = Z
   type BridgeId = Z
 
-  val maxComponents: PortId = 3 // constant set during instantiation, must be < Z32.Max
-  val maxPorts: PortId = 7 // constant set during instantiation, must be < Z32.Max
+  val maxComponents: PortId = 8 // constant set during instantiation, must be < Z32.Max
+  val maxPorts: PortId = 200 // constant set during instantiation, must be < Z32.Max
 
   val logTitle: String = "Art"
   val bridges: MS[BridgeId, Option[Bridge]] = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())

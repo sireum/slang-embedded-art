@@ -56,7 +56,7 @@ object ArtNative_Ext {
         case _ =>
       }
     }
-    for (portId <- eventPortIds) {
+    for (portId <- dataPortIds) {
       sentPortValues.get(portId) match {
         case scala.Some(data) =>
           dataPortVariables(Art.connections(portId)) = data
@@ -116,7 +116,14 @@ object ArtNative_Ext {
         }
         while (!terminated) {
           Thread.sleep((rate * slowdown).toMP.toLong)
-          if (shouldDispatch(bridge.id)) bridge.entryPoints.compute()
+          if (shouldDispatch(bridge.id))
+            try
+              bridge.entryPoints.compute()
+            catch {
+              case x : Throwable =>
+                x.printStackTrace()
+                terminated = true
+            }
         }
         ArtNative_Ext.synchronized {
           numTerminated += 1

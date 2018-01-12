@@ -89,9 +89,16 @@ object ArtNative_Ext {
   }
 
   def run(): Unit = {
-    require(Art.bridges.elements.forall(_.nonEmpty))
+    //require(Art.bridges.elements.forall(_.nonEmpty))
 
-    val bridges = Art.bridges.elements.map({ case Some(b) => b })
+    val bridges = {
+      var r = Vector[Bridge]()
+      for (e <- Art.bridges.elements) e match {
+        case Some(b) => r :+= b
+        case _ =>
+      }
+      r
+    }
 
     val slowdown: Z = 100
 

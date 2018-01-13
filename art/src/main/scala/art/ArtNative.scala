@@ -12,7 +12,7 @@ import org.sireum._
 
   def putValue(portId: Art.PortId, data: DataContent): Unit = $
 
-  def getValue(portId: Art.PortId): DataContent = $
+  def getValue(portId: Art.PortId): Option[DataContent] = $
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = $
 
@@ -23,4 +23,6 @@ import org.sireum._
   def logDebug(title: String, msg: String): Unit = $
 
   def run(): Unit = $
+
+  def time(): Art.Time = $
 }

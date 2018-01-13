@@ -5,11 +5,11 @@ import org.sireum._
 import scala.collection.mutable.{Map => MMap}
 
 object ArtNative_Ext {
-  type Time = Z
+  val noTime: Art.Time = 0
 
-  val noTime: Time = 0
+  val slowdown: Z = 100
 
-  val lastSporadic: MMap[Art.BridgeId, Time] = concMap()
+  val lastSporadic: MMap[Art.BridgeId, Art.Time] = concMap()
   val eventPortVariables: MMap[Art.PortId, DataContent] = concMap()
   val dataPortVariables: MMap[Art.PortId, DataContent] = concMap()
   val receivedPortValues: MMap[Art.PortId, DataContent] = concMap()
@@ -42,24 +42,26 @@ object ArtNative_Ext {
     sentPortValues(portId) = data
   }
 
-  def getValue(portId: Art.PortId): DataContent = {
-    val data = receivedPortValues(portId)
+  def getValue(portId: Art.PortId): Option[DataContent] = {
+    val data = receivedPortValues.get(portId) match {
+      case scala.Some(v) => org.sireum.Some(v)
+      case _ => org.sireum.None[DataContent]
+    }
     return data
   }
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
-    for (portId <- eventPortIds) {
+    for (portId <- eventPortIds ++ dataPortIds) {
       sentPortValues.get(portId) match {
         case scala.Some(data) =>
-          eventPortVariables(Art.connections(portId)) = data
-          sentPortValues -= portId
-        case _ =>
-      }
-    }
-    for (portId <- dataPortIds) {
-      sentPortValues.get(portId) match {
-        case scala.Some(data) =>
-          dataPortVariables(Art.connections(portId)) = data
+          for(p <- Art.connections(portId).elements) {
+            Art.port(p).mode match {
+              case PortMode.DataIn | PortMode.DataOut =>
+                dataPortVariables(p) = data
+              case PortMode.EventIn | PortMode.EventOut =>
+                eventPortVariables(p) = data
+            }
+          }
           sentPortValues -= portId
         case _ =>
       }
@@ -72,7 +74,7 @@ object ArtNative_Ext {
 
   def logDebug(title: String, msg: String): Unit = log("debug", title, msg)
 
-  def time(): Time = toZ(System.currentTimeMillis())
+  def time(): Art.Time = toZ(System.currentTimeMillis())
 
   def shouldDispatch(bridgeId: Art.BridgeId): B = {
     val b = Art.bridge(bridgeId)
@@ -124,8 +126,11 @@ object ArtNative_Ext {
         while (!terminated) {
           Thread.sleep((rate * slowdown).toMP.toLong)
           if (shouldDispatch(bridge.id))
-            try
-              bridge.entryPoints.compute()
+            try {
+              bridge.syncObject.synchronized {
+                bridge.entryPoints.compute()
+              }
+            }
             catch {
               case x : Throwable =>
                 x.printStackTrace()

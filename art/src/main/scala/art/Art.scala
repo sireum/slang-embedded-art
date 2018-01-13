@@ -7,16 +7,23 @@ import org.sireum._
 object Art {
   type PortId = Z
   type BridgeId = Z
+  type Time = Z
 
-  val maxComponents: PortId = 8 // constant set during instantiation, must be < Z32.Max
-  val maxPorts: PortId = 200 // constant set during instantiation, must be < Z32.Max
+  val maxComponents: PortId = 28 // constant set during instantiation, must be < Z32.Max
+  val maxPorts: PortId = 1024 // constant set during instantiation, must be < Z32.Max
 
   val logTitle: String = "Art"
   val bridges: MS[BridgeId, Option[Bridge]] = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
-  val connections: MS[PortId, PortId] = MS.create[PortId, PortId](maxPorts, 2147483647)
+  val connections: MS[PortId, Set[PortId]] = MS.create[PortId, Set[PortId]](maxPorts, Set.empty[PortId]())
+  val ports: MS[PortId, Option[UPort]] = MS.create[PortId, Option[UPort]](maxPorts, None[UPort]())
 
   def bridge(bridgeId: BridgeId): Bridge = {
     val Some(r) = bridges(bridgeId)
+    return r
+  }
+
+  def port(p: PortId) : UPort = {
+    val Some(r) = ports(p)
     return r
   }
 
@@ -29,6 +36,7 @@ object Art {
         ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (sporadic: $min)")
     }
     for (port <- bridge.ports.all) {
+      ports(port.id) = Some(port)
       port.mode match {
         case PortMode.DataIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data in)")
         case PortMode.DataOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data out)")
@@ -51,7 +59,7 @@ object Art {
     ArtNative.putValue(portId, data)
   }
 
-  def getValue(portId: PortId): DataContent = { // GET_VALUE
+  def getValue(portId: PortId): Option[DataContent] = { // GET_VALUE
     val r = ArtNative.getValue(portId)
     return r
   }
@@ -73,7 +81,7 @@ object Art {
   }
 
   def connect(from: UPort, to: UPort): Unit = {
-    connections(from.id) = to.id
+    connections(from.id) = connections(from.id).add(to.id)
     ArtNative.logInfo(logTitle, s"Connected ports: ${from.name} -> ${to.name}")
   }
 
@@ -88,5 +96,9 @@ object Art {
     }
 
     ArtNative.run()
+  }
+
+  def time(): Time = {
+    return ArtNative.time()
   }
 }

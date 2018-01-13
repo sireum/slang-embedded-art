@@ -72,6 +72,8 @@ import org.sireum._
   def entryPoints: Bridge.EntryPoints
 
   def dispatchProtocol: DispatchPropertyProtocol
+
+  def syncObject : Object
 }
 
 

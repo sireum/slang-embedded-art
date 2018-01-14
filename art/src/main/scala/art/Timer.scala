@@ -1,7 +1,7 @@
 package art
 
 import org.sireum.{ISZ, String}
-import art.Art.Time
+import art.Art.{BridgeId, Time}
 
 import scala.collection.mutable.{Map => MMap}
 import java.util.concurrent.atomic.AtomicBoolean
@@ -20,7 +20,7 @@ trait TimerApi {
   val m: MMap[String, AtomicBoolean] = ArtNative_Ext.concMap()
   val executor = Executors.newSingleThreadScheduledExecutor()
 
-  def syncObject : Object
+  def bridge : BridgeId
 
   def dataOutPortIds: ISZ[Art.PortId]
 
@@ -52,7 +52,7 @@ trait TimerApi {
     class c() extends Runnable {
       def run(): Unit = {
         if (b.get()) {
-          syncObject.synchronized {
+          Art.bridge(bridge).synchronized {
             // FIXME: should in data ports be fetched?
             p()
             Art.sendOutput(eventOutPortIds, dataOutPortIds)

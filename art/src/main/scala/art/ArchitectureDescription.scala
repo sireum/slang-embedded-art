@@ -9,7 +9,8 @@ import org.sireum._
                                       connections: ISZ[UConnection]) {
   @spec val allPorts: ISZ[UPort] = $
 
-  @spec def allPortsSpec(i: Z): ISZ[UPort] = l"""
+  @spec def allPortsSpec(i: Z): ISZ[UPort] =
+    l"""
     = base:  ISZ[UPort](), if i == 0
     = rec:   components(i).ports.all ++ allPorts(i - 1), if 0 < i ∧ i < components.size
   """
@@ -37,7 +38,7 @@ import org.sireum._
   def to: UPort
 }
 
-@datatype class Connection[T](from: Port[T], to: Port[T])
+@datatype class Connection[T](val from: Port[T], val to: Port[T])
   extends UConnection
 
 
@@ -56,11 +57,10 @@ import org.sireum._
   def mode: PortMode.Type
 }
 
-@datatype class Port[T](id: Art.PortId,
-                        name: String,
-                        mode: PortMode.Type)
+@datatype class Port[T](val id: Art.PortId,
+                        val name: String,
+                        val mode: PortMode.Type)
   extends UPort
-
 
 @msig trait Bridge {
   def id: Art.BridgeId
@@ -72,8 +72,6 @@ import org.sireum._
   def entryPoints: Bridge.EntryPoints
 
   def dispatchProtocol: DispatchPropertyProtocol
-
-  def syncObject : Object
 }
 
 

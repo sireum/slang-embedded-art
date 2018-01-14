@@ -127,7 +127,7 @@ object ArtNative_Ext {
           Thread.sleep((rate * slowdown).toMP.toLong)
           if (shouldDispatch(bridge.id))
             try {
-              bridge.syncObject.synchronized {
+              bridge.synchronized {
                 bridge.entryPoints.compute()
               }
             }

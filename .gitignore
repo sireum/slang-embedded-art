@@ -1,4 +1,4 @@
-/.idea
+.idea
 /lib_managed
 /project/project
 target
@@ -6,3 +6,4 @@ target
 *.class
 Scratch.scala
 Scratch.sc
+cmake-build-*

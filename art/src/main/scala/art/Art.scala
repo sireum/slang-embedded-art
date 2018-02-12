@@ -9,7 +9,7 @@ object Art {
   type BridgeId = Z
   type Time = Z
 
-  val maxComponents: PortId = 28 // constant set during instantiation, must be < Z32.Max
+  val maxComponents: PortId = 29 // constant set during instantiation, must be < Z32.Max
   val maxPorts: PortId = 1024 // constant set during instantiation, must be < Z32.Max
 
   val logTitle: String = "Art"
@@ -60,12 +60,19 @@ object Art {
   }
 
   def getValue(portId: PortId): Option[DataContent] = { // GET_VALUE
-    val r = ArtNative.getValue(portId)
-    return r
+    ArtNative.getValue(portId)
   }
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
     ArtNative.sendOutput(eventPortIds, dataPortIds)
+  }
+
+  def registerPortListener(portId: Art.PortId, callback: DataContent => Unit): Unit = {
+    ArtNative.registerPortListener(portId, callback)
+  }
+
+  def injectPort(bridgeId: Art.BridgeId, portId: Art.PortId, d: DataContent): Unit = {
+    ArtNative.injectPort(bridgeId, portId, d)
   }
 
   def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = {

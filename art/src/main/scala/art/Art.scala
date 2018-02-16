@@ -14,7 +14,7 @@ object Art {
 
   val logTitle: String = "Art"
   val bridges: MS[BridgeId, Option[Bridge]] = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
-  val connections: MS[PortId, Set[PortId]] = MS.create[PortId, Set[PortId]](maxPorts, Set.empty[PortId]())
+  val connections: MS[PortId, ISZ[PortId]] = MS.create[PortId, ISZ[PortId]](maxPorts, ISZ())
   val ports: MS[PortId, Option[UPort]] = MS.create[PortId, Option[UPort]](maxPorts, None[UPort]())
 
   def bridge(bridgeId: BridgeId): Bridge = {
@@ -88,7 +88,7 @@ object Art {
   }
 
   def connect(from: UPort, to: UPort): Unit = {
-    connections(from.id) = connections(from.id).add(to.id)
+    connections(from.id) = connections(from.id) :+ to.id
     ArtNative.logInfo(logTitle, s"Connected ports: ${from.name} -> ${to.name}")
   }
 

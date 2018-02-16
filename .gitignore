@@ -7,3 +7,4 @@ target
 Scratch.scala
 Scratch.sc
 cmake-build-*
+*.log

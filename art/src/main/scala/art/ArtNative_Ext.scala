@@ -230,6 +230,8 @@ object ArtNative_Ext {
       bridge.entryPoints.finalise()
       logInfo(Art.logTitle, s"Finalized bridge: ${bridge.name}")
     }
+
+    ArtTimer_Ext.finalise()
   }
 
   def log(kind: String, title: String, msg: String): Unit = {

@@ -14,8 +14,6 @@ object ArtNative_Ext {
   val dataPortVariables: MMap[Art.PortId, DataContent] = concMap()
   val receivedPortValues: MMap[Art.PortId, DataContent] = concMap()
   val sentPortValues: MMap[Art.PortId, DataContent] = concMap()
-  val debugObjects: MMap[String, Any] = concMap()
-  val portListeners: MMap[Art.PortId, MSet[DataContent => Unit]] = concMap()
 
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
     val portIds = ISZ[Art.PortId](Art.bridge(bridgeId).ports.eventIns.elements.map(_.id).filter(eventPortVariables.get(_).nonEmpty): _*)
@@ -28,7 +26,7 @@ object ArtNative_Ext {
         case scala.Some(data) =>
           eventPortVariables -= portId
           receivedPortValues(portId) = data
-          portListeners.get(portId).map(s => s.foreach(f => f(data)))
+          ArtDebug_Ext.portListenerCallback(portId, data)
         case _ =>
       }
     }
@@ -36,7 +34,7 @@ object ArtNative_Ext {
       dataPortVariables.get(portId) match {
         case scala.Some(data) =>
           receivedPortValues(portId) = data
-          portListeners.get(portId).map(s => s.foreach(f => f(data)))
+          ArtDebug_Ext.portListenerCallback(portId, data)
         case _ =>
       }
     }
@@ -66,72 +64,11 @@ object ArtNative_Ext {
                 eventPortVariables(p) = data
             }
           }
-          portListeners.get(portId).map(s => s.foreach(f => f(data)))
+          ArtDebug_Ext.portListenerCallback(portId, data)
 
           sentPortValues -= portId
         case _ =>
       }
-    }
-  }
-
-  def setDebugObject[T](key: String, o: T): Unit = {
-    logDebug(Art.logTitle, s"Set debug object for $key")
-    debugObjects(key) = o
-  }
-
-  def getDebugObject[T](key: String): Option[T] = {
-    debugObjects.get(key) match {
-      case scala.Some(o) => Some(o.asInstanceOf[T])
-      case _ => None[T]()
-    }
-  }
-
-  def injectPort(bridgeId: Art.BridgeId, port: Art.PortId, data: DataContent): Unit = {
-    assert(z"0" <= bridgeId && bridgeId < Art.maxComponents && Art.bridges(bridgeId).nonEmpty)
-
-    val bridge = Art.bridges(bridgeId).get
-    assert(bridge.ports.all.elements.map(_.id).contains(port))
-
-    if(bridge.ports.dataOuts.elements.map(_.id).contains(port) ||
-       bridge.ports.eventOuts.elements.map(_.id).contains(port)) {
-
-      logDebug(Art.logTitle, s"Injecting from port ${Art.ports(port).get.name}")
-
-      putValue(port, data)
-      sendOutput(bridge.ports.eventOuts.map(_.id), bridge.ports.dataOuts.map(_.id))
-    } else {
-      logDebug(Art.logTitle, s"Injecting to port ${Art.ports(port).get.name}")
-
-      if(bridge.ports.dataIns.elements.map(_.id).contains(port)) {
-        dataPortVariables(port) = data
-      } else {
-        eventPortVariables(port) = data
-      }
-    }
-  }
-
-  def registerPortListener(portId: Art.PortId, callback: DataContent => Unit): Unit = {
-    assert(z"-1" <= portId && portId < Art.maxPorts)
-    assert(z"-1" == portId || Art.ports(portId).nonEmpty)
-
-    val portIds: Seq[UPort] =
-      if (portId == -1) {
-        // Issues with allowing components to subscribe to everything:
-        //   - will continuously invoke callback when dataIn ports for periodic components receive data.  Would cause
-        //     an issue if action should only be taken when the data changes
-        //   - related to above, client would probably want to know what port was triggered.  Could change callback to
-        //     (UPort, DataContent) => Unit.  Client could maintain a map of UPort -> DataContent to detect when
-        //     dataIn ports change
-        Art.ports.elements.filter(_.nonEmpty).map(_.get)
-      } else {
-        Seq(Art.ports(portId).get)
-      }
-
-    for (p <- portIds) {
-      val c = if (p.mode == PortMode.DataIn || p.mode == PortMode.EventIn) "receives" else "sends"
-      val t = if (p.mode == PortMode.DataIn || p.mode == PortMode.DataOut) "data" else "event"
-      logDebug(Art.logTitle, s"Registered callback.  Triggered when port ${p.name} $c $t")
-      portListeners.getOrElseUpdate(p.id, concSet()).add(callback)
     }
   }
 
@@ -249,11 +186,5 @@ object ArtNative_Ext {
   def concMap[K, V](): MMap[K, V] = {
     import scala.collection.JavaConverters._
     new java.util.concurrent.ConcurrentHashMap[K, V].asScala
-  }
-
-  def concSet[K](): MSet[K] = {
-    import scala.collection.JavaConverters._
-    val m: java.util.Set[K] = java.util.concurrent.ConcurrentHashMap.newKeySet()
-    m.asScala
   }
 }

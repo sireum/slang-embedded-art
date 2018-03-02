@@ -67,14 +67,6 @@ object Art {
     ArtNative.sendOutput(eventPortIds, dataPortIds)
   }
 
-  def registerPortListener(portId: Art.PortId, callback: DataContent => Unit): Unit = {
-    ArtNative.registerPortListener(portId, callback)
-  }
-
-  def injectPort(bridgeId: Art.BridgeId, portId: Art.PortId, d: DataContent): Unit = {
-    ArtNative.injectPort(bridgeId, portId, d)
-  }
-
   def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = {
     ArtNative.logInfo(bridge(bridgeId).name, msg)
   }

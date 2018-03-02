@@ -16,14 +16,6 @@ import org.sireum._
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = $
 
-  def registerPortListener(portId: Art.PortId, callback: DataContent => Unit): Unit = $
-
-  def injectPort(bridgeId: Art.BridgeId, port: Art.PortId, data: DataContent): Unit = $
-
-  def setDebugObject[T](key: String, o: T): Unit = $
-
-  def getDebugObject[T](key: String): Option[T] = $
-
   def logInfo(title: String, msg: String): Unit = $
 
   def logError(title: String, msg: String): Unit = $

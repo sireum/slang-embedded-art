@@ -8,9 +8,13 @@ import org.sireum._
 
   def injectPort(bridgeId: Art.BridgeId, port: Art.PortId, data: DataContent): Unit = $
 
+
   def registerPortListener(id: Art.PortId, listener: PortListener): Unit = $
 
   def registerBridgeListener(id:Art.BridgeId, listener: BridgeListener): Unit = $
+
+  def registerProjectListener(listener: Listener): Unit = $
+
 
   def setDebugObject[T](key: String, o: T): Unit = $
 
@@ -33,5 +37,3 @@ import org.sireum._
 // mix both of these in to listen to all outgoing ports
 @msig trait BridgeOutDataListener extends BridgeListener
 @msig trait BridgeOutEventListener extends BridgeListener
-
-

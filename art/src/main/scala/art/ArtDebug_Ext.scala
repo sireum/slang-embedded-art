@@ -73,6 +73,10 @@ object ArtDebug_Ext {
     registerListener(bridge, ports.toSeq, listener)
   }
 
+  def registerProjectListener(listener: Listener): Unit = {
+    art.Art.bridges.elements.filter(_.nonEmpty).foreach(b => registerListener(b.get, b.get.ports.all.elements, listener))
+  }
+
   private def registerListener(bridge: Bridge, ports: Seq[UPort], listener: Listener): Unit = {
     for (port <- ports) {
       val c = if (port.mode == PortMode.DataIn || port.mode == PortMode.EventIn) "receives" else "sends"

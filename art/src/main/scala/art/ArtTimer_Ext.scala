@@ -34,6 +34,11 @@ object ArtTimer_Ext {
       return
     }
 
+    if(wait < 0) {
+      art.Art.logError(bridgeId, s"Invalid wait time: ${wait}.  Value must be non-negative.")
+      return
+    }
+
     var b = new AtomicBoolean(true)
 
     val bridge = Art.bridge(bridgeId)

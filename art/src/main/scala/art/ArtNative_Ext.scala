@@ -7,7 +7,7 @@ import scala.collection.mutable.{Map => MMap, Set => MSet}
 object ArtNative_Ext {
   val noTime: Art.Time = 0
 
-  val slowdown: Z = 100
+  val slowdown: Z = 1
 
   val lastSporadic: MMap[Art.BridgeId, Art.Time] = concMap()
   val eventPortVariables: MMap[Art.PortId, DataContent] = concMap()

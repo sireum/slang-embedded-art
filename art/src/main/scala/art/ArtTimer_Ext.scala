@@ -28,7 +28,7 @@ object ArtTimer_Ext {
     }
   }
 
-  def setTimeout(bridgeId: BridgeId, eventId: String, wait: Art.Time, callback: () => Unit): Unit = {
+  def setTimeout(bridgeId: BridgeId, eventId: String, wait: Art.Time, autoClear: B, callback: () => Unit): Unit = {
     if(m.get(eventId).nonEmpty) {
       art.Art.logError(bridgeId, s"callback already set for $eventId")
       return
@@ -51,6 +51,9 @@ object ArtTimer_Ext {
           bridge.synchronized {
             callback()
             Art.sendOutput(eventOuts, dataOuts)
+            if(autoClear) {
+              clearTimeout(eventId)
+            }
           }
         }
       }

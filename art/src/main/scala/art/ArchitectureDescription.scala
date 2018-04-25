@@ -117,9 +117,6 @@ object DispatchPropertyProtocol {
   // @datatype class Hybrid() extends DispatchPropertyProtocol
 }
 
-
-@sig trait DataContent
-
 @datatype trait DispatchStatus
 
 @datatype class TimeTriggered() extends DispatchStatus

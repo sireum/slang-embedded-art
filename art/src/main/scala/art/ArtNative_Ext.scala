@@ -106,8 +106,6 @@ object ArtNative_Ext {
       r
     }
 
-    val slowdown: Z = 100
-
     for (bridge <- bridges) {
       bridge.entryPoints.initialise()
       logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")

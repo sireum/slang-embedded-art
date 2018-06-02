@@ -60,7 +60,7 @@ object Art {
   }
 
   def getValue(portId: PortId): Option[DataContent] = { // GET_VALUE
-    ArtNative.getValue(portId)
+    return ArtNative.getValue(portId)
   }
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT

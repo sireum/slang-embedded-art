@@ -1,6 +1,7 @@
 package art
 
 import org.sireum._
+import org.sireum.ops.ISZOps
 
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 
@@ -10,6 +11,7 @@ object ArtNative_Ext {
   val slowdown: Z = 1
 
   val lastSporadic: MMap[Art.BridgeId, Art.Time] = concMap()
+  val lastReceiveInputs: MMap[Art.PortId, (Art.Time, Art.Time)] = concMap()
   val eventPortVariables: MMap[Art.PortId, DataContent] = concMap()
   val dataPortVariables: MMap[Art.PortId, DataContent] = concMap()
   val receivedPortValues: MMap[Art.PortId, DataContent] = concMap()
@@ -17,15 +19,42 @@ object ArtNative_Ext {
 
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
     val portIds = ISZ[Art.PortId](Art.bridge(bridgeId).ports.eventIns.elements.map(_.id).filter(eventPortVariables.get(_).nonEmpty): _*)
-    if (portIds.isEmpty) TimeTriggered() else EventTriggered(portIds)
+    if (portIds.isEmpty) {
+      TimeTriggered()
+    } else {
+      // AS5506C 8.3.3 (36)
+      // ... the port with the higher Urgency property value gets serviced first.
+      // If several ports with the same Urgency are non-empty, then the
+      // Queue_Processing_Protocol is applied across these ports and must be
+      // the same for them. In the case of FIFO the oldest event will be
+      // serviced (global FIFO).
+      val urgentFifo = ISZOps(portIds.map(Art.port(_))).sortWith((a,b) => {
+        if(a.urgency < b.urgency) F
+        else if(a.urgency > b.urgency) T
+        else {
+          val _a = eventPortVariables.get(a.id).get.asInstanceOf[ArtPayload]
+          val _b = eventPortVariables.get(b.id).get.asInstanceOf[ArtPayload]
+          _a.received < _b.received
+        }
+      }).map(_.id)
+      EventTriggered(urgentFifo)
+    }
   }
 
   def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
+    def updateLastReceivedInput(portId : Art.PortId): Unit = {
+      if(lastReceiveInputs.contains(portId))
+        lastReceiveInputs(portId) = (lastReceiveInputs(portId)._2, time())
+      else
+        lastReceiveInputs(portId) = (time(), time())
+    }
+
     for (portId <- eventPortIds) {
       eventPortVariables.get(portId) match {
         case scala.Some(data) =>
           eventPortVariables -= portId
           receivedPortValues(portId) = data
+          updateLastReceivedInput(portId)
           ArtDebug_Ext.portListenerCallback(portId, data)
         case _ =>
       }
@@ -34,6 +63,7 @@ object ArtNative_Ext {
       dataPortVariables.get(portId) match {
         case scala.Some(data) =>
           receivedPortValues(portId) = data
+          updateLastReceivedInput(portId)
           ArtDebug_Ext.portListenerCallback(portId, data)
         case _ =>
       }
@@ -46,27 +76,56 @@ object ArtNative_Ext {
 
   def getValue(portId: Art.PortId): Option[DataContent] = {
     val data = receivedPortValues.get(portId) match {
-      case scala.Some(v) => org.sireum.Some(v)
+      case scala.Some(v) => org.sireum.Some(v.asInstanceOf[ArtPayload].data)
       case _ => org.sireum.None[DataContent]()
     }
     return data
   }
 
+  def fresh(portId: Art.PortId): B = {
+    // api fresh methods will only be generated for in data ports and a
+    // compute must have called receiveInput prior to the component being
+    // able to invoke the fresh method
+    //
+    // requires (Art.port(portId).mode == PortMode.DataIn &&
+    //          lastReceiveInput.contains(portId))
+    if(!dataPortVariables.contains(portId))
+      return F
+    else {
+      // T if data was received inbetween the penultimate and last calls to receiveInput
+      val received = dataPortVariables(portId).asInstanceOf[ArtPayload].received
+      return received > lastReceiveInputs(portId)._1 && received < lastReceiveInputs(portId)._2
+    }
+  }
+
+  def updated(portId: Art.PortId): B = {
+    // requires (lastReceivedInput.contains(portId))
+    val value: Option[ArtPayload] =
+      if(eventPortVariables.contains(portId)) Some(eventPortVariables(portId).asInstanceOf[ArtPayload])
+      else if (dataPortVariables.contains(portId)) Some(dataPortVariables(portId).asInstanceOf[ArtPayload])
+      else None[ArtPayload]()
+
+    return value match {
+      case Some(v) => v.received > lastReceiveInputs(portId)._2
+      case _ => F
+    }
+  }
+
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
-    for (portId <- eventPortIds ++ dataPortIds) {
-      sentPortValues.get(portId) match {
+    for (srcPortId <- eventPortIds ++ dataPortIds) {
+      sentPortValues.get(srcPortId) match {
         case scala.Some(data) =>
-          for(p <- Art.connections(portId).elements) {
-            Art.port(p).mode match {
+          for(dstPortId <- Art.connections(srcPortId).elements) {
+            Art.port(dstPortId).mode match {
               case PortMode.DataIn | PortMode.DataOut =>
-                dataPortVariables(p) = data
+                dataPortVariables(dstPortId) = ArtPayload(data, time())
               case PortMode.EventIn | PortMode.EventOut =>
-                eventPortVariables(p) = data
+                eventPortVariables(dstPortId) = ArtPayload(data, time())
             }
           }
-          ArtDebug_Ext.portListenerCallback(portId, data)
+          ArtDebug_Ext.portListenerCallback(srcPortId, data)
 
-          sentPortValues -= portId
+          sentPortValues -= srcPortId
         case _ =>
       }
     }
@@ -131,6 +190,7 @@ object ArtNative_Ext {
             try {
               bridge.synchronized {
                 bridge.entryPoints.compute()
+                //lastSporadic(bridge.id) = time()
               }
             }
             catch {

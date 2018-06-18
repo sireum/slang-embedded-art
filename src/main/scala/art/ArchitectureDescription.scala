@@ -55,11 +55,14 @@ import org.sireum._
   def name: String
 
   def mode: PortMode.Type
+
+  def urgency: Z
 }
 
 @datatype class Port[T](val id: Art.PortId,
                         val name: String,
-                        val mode: PortMode.Type)
+                        val mode: PortMode.Type,
+                        val urgency: Z)
   extends UPort
 
 @msig trait Bridge {

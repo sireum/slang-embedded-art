@@ -14,6 +14,10 @@ import org.sireum._
 
   def getValue(portId: Art.PortId): Option[DataContent] = $
 
+  def fresh(portId: Art.PortId) : B = $
+
+  def updated(portId: Art.PortId) : B = $
+
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = $
 
   def logInfo(title: String, msg: String): Unit = $

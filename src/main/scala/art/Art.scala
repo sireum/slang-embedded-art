@@ -63,6 +63,14 @@ object Art {
     return ArtNative.getValue(portId)
   }
 
+  def fresh(portId: PortId) : B = {
+    return ArtNative.fresh(portId)
+  }
+
+  def updated(portId: PortId) : B = {
+    return ArtNative.updated(portId)
+  }
+
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
     ArtNative.sendOutput(eventPortIds, dataPortIds)
   }

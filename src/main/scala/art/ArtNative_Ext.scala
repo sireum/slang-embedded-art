@@ -26,7 +26,6 @@ object ArtNative_Ext {
         case scala.Some(data) =>
           eventPortVariables -= portId
           receivedPortValues(portId) = data
-          ArtDebug_Ext.portListenerCallback(portId, data)
         case _ =>
       }
     }
@@ -34,7 +33,6 @@ object ArtNative_Ext {
       dataPortVariables.get(portId) match {
         case scala.Some(data) =>
           receivedPortValues(portId) = data
-          ArtDebug_Ext.portListenerCallback(portId, data)
         case _ =>
       }
     }
@@ -53,20 +51,20 @@ object ArtNative_Ext {
   }
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
-    for (portId <- eventPortIds ++ dataPortIds) {
-      sentPortValues.get(portId) match {
+    for (srcPortId <- eventPortIds ++ dataPortIds) {
+      sentPortValues.get(srcPortId) match {
         case scala.Some(data) =>
-          for(p <- Art.connections(portId).elements) {
-            Art.port(p).mode match {
+          ArtDebug_Ext.portListenerCallback(srcPortId, data)
+          for(dstPortId <- Art.connections(srcPortId).elements) {
+            Art.port(dstPortId).mode match {
               case PortMode.DataIn | PortMode.DataOut =>
-                dataPortVariables(p) = data
+                dataPortVariables(dstPortId) = data
               case PortMode.EventIn | PortMode.EventOut =>
-                eventPortVariables(p) = data
+                eventPortVariables(dstPortId) = data
             }
+            ArtDebug_Ext.portListenerCallback(dstPortId, data)
           }
-          ArtDebug_Ext.portListenerCallback(portId, data)
-
-          sentPortValues -= portId
+          sentPortValues -= srcPortId
         case _ =>
       }
     }

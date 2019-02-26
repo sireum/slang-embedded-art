@@ -2,13 +2,21 @@ package art
 
 import org.sireum._
 import scala.collection.mutable.{Map => MMap, Set => MSet}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.Failure
 
 object ArtDebug_Ext {
   private val debugObjects: MMap[String, Any] = ArtNative_Ext.concMap()
   private val listeners: MMap[Art.PortId, (Bridge, UPort, MSet[Listener])] = ArtNative_Ext.concMap()
 
   protected[art] def portListenerCallback(p: Art.PortId, d: DataContent): Unit = {
-    listeners.get(p).map(e => e._3.foreach(_.callback(e._1, e._2, d)))
+    listeners.get(p).map(e => e._3.foreach( c =>
+      Future ( c.callback(e._1, e._2, d) ) onComplete {
+        case Failure(e) => throw e
+        case _ =>
+      }
+    ))
   }
 
   def setDebugObject[T](key: String, o: T): Unit = {

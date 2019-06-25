@@ -10,13 +10,22 @@ object ArtDebug_Ext {
   private val debugObjects: MMap[String, Any] = ArtNative_Ext.concMap()
   private val listeners: MMap[Art.PortId, (Bridge, UPort, MSet[Listener])] = ArtNative_Ext.concMap()
 
+  /**
+    * Set to false to disable futures on listenerCallbacks. If false then avoid blocking the thread.
+    */
+  var forkListenerCallbacks: Boolean = true
+
   protected[art] def portListenerCallback(p: Art.PortId, d: DataContent): Unit = {
-    listeners.get(p).map(e => e._3.foreach( c =>
-      Future ( c.callback(e._1, e._2, d) ) onComplete {
-        case Failure(e) => throw e
-        case _ =>
-      }
-    ))
+    if (forkListenerCallbacks) {
+      listeners.get(p).map(e => e._3.foreach( c =>
+        Future ( c.callback(e._1, e._2, d) ) onComplete {
+          case Failure(e) => throw e
+          case _ =>
+        }
+      ))
+    } else {
+      listeners.get(p).map(e => e._3.foreach(_.callback(e._1, e._2, d)))
+    }
   }
 
   def setDebugObject[T](key: String, o: T): Unit = {

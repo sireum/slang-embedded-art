@@ -9,7 +9,8 @@ import org.sireum._
                                       connections: ISZ[UConnection]) {
   @spec val allPorts: ISZ[UPort] = $
 
-  @spec def allPortsSpec(i: Z): ISZ[UPort] =
+  @spec def allPortsSpec(i: Z): ISZ[UPort] = $
+  /*
     l"""
     = base:  ISZ[UPort](), if i == 0
     = rec:   components(i).ports.all ++ allPorts(i - 1), if 0 < i ∧ i < components.size
@@ -30,15 +31,17 @@ import org.sireum._
              ∀j: [0, allPorts.size)
                i ≠ j → allPorts(i).id ≠ allPorts(j).id
    """
-
+  */
 }
 
 @datatype trait UConnection {
+  /*
   l""" invariant
          FromPortOut:   from.mode ≡ PortMode.DataOut ∨ from.mode ≡ PortMode.EventOut
          DataPort:    (from.mode ≡ PortMode.DataOut) ≡ (to.mode ≡ PortMode.DataIn)
          EventPort:  (from.mode ≡ PortMode.EventOut) ≡ (to.mode ≡ PortMode.EventIn)  """
-
+  */
+  
   def from: UPort
 
   def to: UPort

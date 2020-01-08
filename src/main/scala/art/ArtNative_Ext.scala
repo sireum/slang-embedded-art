@@ -188,6 +188,12 @@ object ArtNative_Ext {
   // TESTING //
   /////////////
 
+  /**
+   * Calls the initialize entry points on all registered bridges AND resets all inputs and outputs for all ports.
+   * Testers should NOT call this method because BridgeTestSuite will automatically call this method before each test.
+   *
+   * (note: BridgeTestSuite exists only in the test scope)
+   */
   def initTest(): Unit = {
     val bridges = {
       var r = Vector[Bridge]()
@@ -198,12 +204,27 @@ object ArtNative_Ext {
       r
     }
 
+    // delete ALL port values as well as lastSporadic tracker
+    lastSporadic.clear()
+    eventPortVariables.clear()
+    dataPortVariables.clear()
+    receivedPortValues.clear()
+    sentPortValues.clear()
+
     for (bridge <- bridges) {
       bridge.entryPoints.initialise()
       logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
     }
   }
 
+  /**
+   * Precondition: executeInit() has been called prior.
+   *
+   * Executes the testCompute() method one time for each registered bridge.
+   *
+   * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
+   * This is to ensure no exceptions are overlooked during testing.
+   */
   def executeTest(): Unit = {
     val bridges = {
       var r = Vector[Bridge]()
@@ -216,12 +237,18 @@ object ArtNative_Ext {
 
     for (bridge <- bridges) {
       println("begin")
-      bridge.entryPoints.compute()
+      bridge.entryPoints.testCompute()
       println("end")
     }
 
   }
 
+  /**
+   * Calls the finalize entry points on all registered bridges.
+   * Testers should NOT call this method because BridgeTestSuite will automatically call this method after each test.
+   *
+   * (note: BridgeTestSuite exists only in the test scope)
+   */
   def finalizeTest(): Unit = {
     val bridges = {
       var r = Vector[Bridge]()
@@ -240,11 +267,33 @@ object ArtNative_Ext {
     ArtTimer_Ext.finalise()
   }
 
+  /**
+   * A method that replaces bridge.compute()'s calls to [[Art.sendOutput()]] in its equivalent testCompute() method.
+   *
+   * This method is currently a NO-OP, but may gain functionality later.
+   *
+   * @param eventPortIds the event ports to be "copied and cleared" (but currently nothing happens)
+   * @param dataPortIds the data ports to be "copied and cleared" (but currently nothing happens)
+   */
   def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // testing SEND_OUTPUT
     // note: sendOutput is usually accessed via: Art.sendOutput -> ArtNative.sendOutput -> ArtNative_Ext.sendOutput
     // NO OP
   }
 
+  /**
+   * Because a bridge's testCompute() doesn't clear outputs, this method can be used by users to manually
+   * clear the output if desired. This is useful for tests involving multiple dispatches.
+   */
+  def manuallyClearOutput(): Unit = {
+    sentPortValues.clear()
+  }
+
+  /**
+   * Inserts a value into an "infrastructure in" port. For testing only, normally this is handled by Art.
+   *
+   * @param dstPortId the portId to place the passed [[DataContent]] into
+   * @param data the [[DataContent]] which will be placed in the dstPort
+   */
   def insertInPortValue(dstPortId: Art.PortId, data: DataContent): Unit = {
     // note: that could would be changed when we refactor to support event queues of size > 1
     Art.port(dstPortId).mode match {
@@ -252,10 +301,15 @@ object ArtNative_Ext {
         dataPortVariables(dstPortId) = data
       case PortMode.EventIn | PortMode.EventOut =>
         eventPortVariables(dstPortId) = data
-
     }
   }
 
+  /**
+   * Returns the value of an out port.
+   *
+   * @param portId the id of the OUTPUT port to return a value from
+   * @return If the port is non-empty, a [[Some]] of [[DataContent]]. Otherwise [[None]].
+   */
   def observeOutPortValue(portId: Art.PortId): Option[DataContent] = {
     // note: that could would be changed when we refactor to support event queues of size > 1
     sentPortValues.get(portId) match {
@@ -263,6 +317,4 @@ object ArtNative_Ext {
       case scala.None => org.sireum.None[DataContent]
     }
   }
-
-
 }

@@ -100,6 +100,17 @@ object Bridge {
     def recover(): Unit
 
     def finalise(): Unit
+
+    /////////////
+    // TESTING //
+    /////////////
+
+    /**
+     * A copy of compute() except that all calls to [[Art.sendOutput()]] are replaced with [[Art.releaseOutput()]].
+     * This prevents output port values from being cleared after each compute() when testing.
+     */
+    def testCompute(): Unit
+
   }
 
   @datatype class Ports(all: ISZ[UPort],

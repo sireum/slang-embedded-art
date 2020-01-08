@@ -104,7 +104,7 @@ object Art {
   /////////////
   // TESTING //
   /////////////
-
+  
   def initTest(component: Bridge): Unit = {
     register(component)
     ArtNative.initTest()
@@ -116,6 +116,22 @@ object Art {
 
   def finalizeTest(): Unit = {
     ArtNative.finalizeTest()
+  }
+
+  def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
+    ArtNative.releaseOutput(eventPortIds, dataPortIds)
+  }
+
+  def manuallyClearOutput(): Unit = {
+    ArtNative.manuallyClearOutput()
+  }
+
+  def insertInPortValue(dstPortId: Art.PortId, data: DataContent): Unit = {
+    ArtNative.insertInPortValue(dstPortId, data)
+  }
+
+  def observeOutPortValue(portId: Art.PortId): Option[DataContent] = {
+    ArtNative.observeOutPortValue(portId)
   }
 
 

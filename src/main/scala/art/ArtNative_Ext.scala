@@ -183,4 +183,86 @@ object ArtNative_Ext {
     import scala.collection.JavaConverters._
     new java.util.concurrent.ConcurrentHashMap[K, V].asScala
   }
+
+  /////////////
+  // TESTING //
+  /////////////
+
+  def initTest(): Unit = {
+    val bridges = {
+      var r = Vector[Bridge]()
+      for (e <- Art.bridges.elements) e match {
+        case MSome(b) => r :+= b
+        case _ =>
+      }
+      r
+    }
+
+    for (bridge <- bridges) {
+      bridge.entryPoints.initialise()
+      logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
+    }
+  }
+
+  def executeTest(): Unit = {
+    val bridges = {
+      var r = Vector[Bridge]()
+      for (e <- Art.bridges.elements) e match {
+        case MSome(b) => r :+= b
+        case _ =>
+      }
+      r
+    }
+
+    for (bridge <- bridges) {
+      println("begin")
+      bridge.entryPoints.compute()
+      println("end")
+    }
+
+  }
+
+  def finalizeTest(): Unit = {
+    val bridges = {
+      var r = Vector[Bridge]()
+      for (e <- Art.bridges.elements) e match {
+        case MSome(b) => r :+= b
+        case _ =>
+      }
+      r
+    }
+
+    for (bridge <- bridges) {
+      bridge.entryPoints.finalise()
+      logInfo(Art.logTitle, s"Finalized bridge: ${bridge.name}")
+    }
+
+    ArtTimer_Ext.finalise()
+  }
+
+  def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // testing SEND_OUTPUT
+    // note: sendOutput is usually accessed via: Art.sendOutput -> ArtNative.sendOutput -> ArtNative_Ext.sendOutput
+    // NO OP
+  }
+
+  def insertInPortValue(dstPortId: Art.PortId, data: DataContent): Unit = {
+    // note: that could would be changed when we refactor to support event queues of size > 1
+    Art.port(dstPortId).mode match {
+      case PortMode.DataIn | PortMode.DataOut =>
+        dataPortVariables(dstPortId) = data
+      case PortMode.EventIn | PortMode.EventOut =>
+        eventPortVariables(dstPortId) = data
+
+    }
+  }
+
+  def observeOutPortValue(portId: Art.PortId): Option[DataContent] = {
+    // note: that could would be changed when we refactor to support event queues of size > 1
+    sentPortValues.get(portId) match {
+      case scala.Some(value: DataContent) => org.sireum.Some[DataContent](value)
+      case scala.None => org.sireum.None[DataContent]
+    }
+  }
+
+
 }

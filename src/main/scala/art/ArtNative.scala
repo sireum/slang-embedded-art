@@ -25,4 +25,15 @@ import org.sireum._
   def run(): Unit = $
 
   def time(): Art.Time = $
+
+  /////////////
+  // TESTING //
+  /////////////
+
+  def initTest(): Unit = $
+
+  def executeTest(): Unit = $
+
+  def finalizeTest(): Unit = $
+
 }

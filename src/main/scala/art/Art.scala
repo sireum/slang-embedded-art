@@ -100,4 +100,23 @@ object Art {
   def time(): Time = {
     return ArtNative.time()
   }
+
+  /////////////
+  // TESTING //
+  /////////////
+
+  def initTest(component: Bridge): Unit = {
+    register(component)
+    ArtNative.initTest()
+  }
+
+  def executeTest(): Unit = {
+    ArtNative.executeTest()
+  }
+
+  def finalizeTest(): Unit = {
+    ArtNative.finalizeTest()
+  }
+
+
 }

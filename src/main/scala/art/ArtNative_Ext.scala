@@ -2,7 +2,7 @@ package art
 
 import org.sireum._
 
-import scala.collection.mutable.{Map => MMap, Set => MSet}
+import scala.collection.mutable.{Map => MMap}
 
 object ArtNative_Ext {
   val noTime: Art.Time = 0
@@ -188,6 +188,14 @@ object ArtNative_Ext {
   // TESTING //
   /////////////
 
+//  def clearAll(): Unit = {
+//    lastSporadic.clear()
+//    eventPortVariables.clear()
+//    dataPortVariables.clear()
+//    receivedPortValues.clear()
+//    sentPortValues.clear()
+//  }
+
   /**
    * Calls the initialize entry points on all registered bridges AND resets all inputs and outputs for all ports.
    * Testers should NOT call this method because BridgeTestSuite will automatically call this method before each test.
@@ -203,6 +211,8 @@ object ArtNative_Ext {
       }
       r
     }
+
+    // note that all ports and bridges were deleted by Art's initTest
 
     // delete ALL port values as well as lastSporadic tracker
     lastSporadic.clear()

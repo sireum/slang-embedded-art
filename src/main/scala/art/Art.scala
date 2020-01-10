@@ -104,9 +104,27 @@ object Art {
   /////////////
   // TESTING //
   /////////////
-  
-  def initTest(component: Bridge): Unit = {
-    register(component)
+
+  /**
+   * Clears any existing ports and bridges, then sets up ports/bridges for the next test.
+   *
+   * Automatically called by BridgeTestSuite before each test.
+   */
+  def initTest(bridge: Bridge): Unit = {
+    // remove all bridges
+    for (i <- bridges.indices) {
+      bridges.update(i, MNone())
+    }
+
+    // remove all ports
+    for (i <- ports.indices) {
+      ports.update(i, None())
+    }
+
+    // register bridge passed to this method
+    register(bridge)
+
+    // let ArtNative reset itself as well
     ArtNative.initTest()
   }
 

@@ -54,15 +54,15 @@ object ArtNative_Ext {
     for (srcPortId <- eventPortIds ++ dataPortIds) {
       sentPortValues.get(srcPortId) match {
         case scala.Some(data) =>
-          ArtDebug_Ext.portListenerCallback(srcPortId, data)
-          for(dstPortId <- Art.connections(srcPortId).elements) {
+          val connection = Art.connections(srcPortId)
+          for(dstPortId <- connection.elements) {
             Art.port(dstPortId).mode match {
               case PortMode.DataIn | PortMode.DataOut =>
                 dataPortVariables(dstPortId) = data
               case PortMode.EventIn | PortMode.EventOut =>
                 eventPortVariables(dstPortId) = data
             }
-            ArtDebug_Ext.portListenerCallback(dstPortId, data)
+            ArtDebug_Ext.outputCallback(srcPortId, dstPortId, data)
           }
           sentPortValues -= srcPortId
         case _ =>
@@ -108,6 +108,8 @@ object ArtNative_Ext {
       bridge.entryPoints.initialise()
       logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
     }
+
+    ArtDebug_Ext.start()
 
     var terminated = false
     var numTerminated = 0
@@ -165,6 +167,7 @@ object ArtNative_Ext {
     }
 
     ArtTimer_Ext.finalise()
+    ArtDebug_Ext.stop()
   }
 
   def log(kind: String, title: String, msg: String): Unit = {

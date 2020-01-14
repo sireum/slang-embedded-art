@@ -11,17 +11,17 @@ object ArtDebug_Ext {
   private val listeners: MSet[ArtListener] = concSet()
 
   protected[art] def start(): Unit = {
-    val time = Art.time() // todo discuss using scaled nanoTime()
+    val time = Art.time()
     listeners.foreach(listener => listener.start(time))
   }
 
   protected[art] def stop(): Unit = {
-    val time = Art.time() // todo discuss using scaled nanoTime()
+    val time = Art.time()
     listeners.foreach(listener => listener.stop(time))
   }
 
   protected[art] def outputCallback(src: Art.PortId, dst: Art.PortId, data: DataContent): Unit = {
-    val time = Art.time() // todo discuss using scaled nanoTime()
+    val time = Art.time()
     listeners.foreach(listener => listener.output(src, dst, data, time))
   }
 

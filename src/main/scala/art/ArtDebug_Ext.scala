@@ -57,9 +57,9 @@ object ArtDebug_Ext {
       ArtNative.logDebug(Art.logTitle, s"Injecting to port ${Art.ports(port).get.name}")
 
       if(bridge.ports.dataIns.elements.map(_.id).contains(port)) {
-        ArtNative_Ext.dataPortVariables(port) = data
+        ArtNative_Ext.dataPortVariables(port) = ArtMessage(data)
       } else {
-        ArtNative_Ext.eventPortVariables(port) = data
+        ArtNative_Ext.eventPortVariables(port) = ArtMessage(data)
       }
     }
   }

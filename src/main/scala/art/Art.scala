@@ -100,4 +100,55 @@ object Art {
   def time(): Time = {
     return ArtNative.time()
   }
+
+  /////////////
+  // TESTING //
+  /////////////
+
+  /**
+   * Clears any existing ports and bridges, then sets up ports/bridges for the next test.
+   *
+   * Automatically called by BridgeTestSuite before each test.
+   */
+  def initTest(bridge: Bridge): Unit = {
+    // remove all bridges
+    for (i <- bridges.indices) {
+      bridges(i) = MNone()
+    }
+
+    // remove all ports
+    for (i <- ports.indices) {
+      ports(i) = None()
+    }
+
+    // register bridge passed to this method
+    register(bridge)
+
+    // let ArtNative reset itself as well
+    ArtNative.initTest()
+  }
+
+  def executeTest(): Unit = {
+    ArtNative.executeTest()
+  }
+
+  def finalizeTest(): Unit = {
+    ArtNative.finalizeTest()
+  }
+
+  def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
+    ArtNative.releaseOutput(eventPortIds, dataPortIds)
+  }
+
+  def manuallyClearOutput(): Unit = {
+    ArtNative.manuallyClearOutput()
+  }
+
+  def insertInPortValue(dstPortId: Art.PortId, data: DataContent): Unit = {
+    ArtNative.insertInPortValue(dstPortId, data)
+  }
+
+  def observeOutPortValue(portId: Art.PortId): Option[DataContent] = {
+    ArtNative.observeOutPortValue(portId)
+  }
 }

@@ -47,7 +47,7 @@ import org.sireum._
   def to: UPort
 }
 
-@datatype class Connection[T](val from: Port[T], val to: Port[T])
+@datatype class Connection(val from: UPort, val to: UPort)
   extends UConnection
 
 
@@ -69,6 +69,12 @@ import org.sireum._
 @datatype class Port[T](val id: Art.PortId,
                         val name: String,
                         val mode: PortMode.Type)
+  extends UPort
+
+@datatype class UrgentPort[T](val id: Art.PortId,
+                              val name: String,
+                              val mode: PortMode.Type,
+                              val urgency: Z)
   extends UPort
 
 @msig trait Bridge {
@@ -100,6 +106,8 @@ object Bridge {
     def recover(): Unit
 
     def finalise(): Unit
+    
+    def testCompute(): Unit = { println("Default testCompute") }
   }
 
   @datatype class Ports(all: ISZ[UPort],

@@ -125,15 +125,15 @@ object Art {
     register(bridge)
 
     // let ArtNative reset itself as well
-    ArtNative.initTest()
+    ArtNative.initTest(bridge)
   }
 
-  def executeTest(): Unit = {
-    ArtNative.executeTest()
+  def executeTest(bridge: Bridge): Unit = {
+    ArtNative.executeTest(bridge)
   }
 
-  def finalizeTest(): Unit = {
-    ArtNative.finalizeTest()
+  def finalizeTest(bridge: Bridge): Unit = {
+    ArtNative.finalizeTest(bridge)
   }
 
   def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {

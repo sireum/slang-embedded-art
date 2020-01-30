@@ -235,30 +235,13 @@ object ArtNative_Ext {
   // TESTING //
   /////////////
 
-  //  def clearAll(): Unit = {
-  //    lastSporadic.clear()
-  //    eventPortVariables.clear()
-  //    dataPortVariables.clear()
-  //    receivedPortValues.clear()
-  //    sentPortValues.clear()
-  //  }
-
   /**
    * Calls the initialize entry points on all registered bridges AND resets all inputs and outputs for all ports.
    * Testers should NOT call this method because BridgeTestSuite will automatically call this method before each test.
    *
    * (note: BridgeTestSuite exists only in the test scope)
    */
-  def initTest(): Unit = {
-    val bridges = {
-      var r = Vector[Bridge]()
-      for (e <- Art.bridges.elements) e match {
-        case MSome(b) => r :+= b
-        case _ =>
-      }
-      r
-    }
-
+  def initTest(bridge: Bridge): Unit = {
     // note that all ports and bridges were deleted by Art's initTest
 
     // delete ALL port values as well as lastSporadic tracker
@@ -268,10 +251,11 @@ object ArtNative_Ext {
     receivedPortValues.clear()
     sentPortValues.clear()
 
-    for (bridge <- bridges) {
-      bridge.entryPoints.initialise()
-      logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
-    }
+    // clear pending ArtTimer events (also done after a test completes)
+    ArtTimer_Ext.m.keys.foreach(ArtTimer_Ext.clearTimeout)
+
+    bridge.entryPoints.initialise()
+    logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
   }
 
   /**
@@ -282,22 +266,8 @@ object ArtNative_Ext {
    * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
    * This is to ensure no exceptions are overlooked during testing.
    */
-  def executeTest(): Unit = {
-    val bridges = {
-      var r = Vector[Bridge]()
-      for (e <- Art.bridges.elements) e match {
-        case MSome(b) => r :+= b
-        case _ =>
-      }
-      r
-    }
-
-    for (bridge <- bridges) {
-      println("begin")
-      bridge.entryPoints.testCompute()
-      println("end")
-    }
-
+  def executeTest(bridge: Bridge): Unit = {
+    bridge.entryPoints.testCompute()
   }
 
   /**
@@ -306,22 +276,12 @@ object ArtNative_Ext {
    *
    * (note: BridgeTestSuite exists only in the test scope)
    */
-  def finalizeTest(): Unit = {
-    val bridges = {
-      var r = Vector[Bridge]()
-      for (e <- Art.bridges.elements) e match {
-        case MSome(b) => r :+= b
-        case _ =>
-      }
-      r
-    }
+  def finalizeTest(bridge: Bridge): Unit = {
+    bridge.entryPoints.finalise()
+    logInfo(Art.logTitle, s"Finalized bridge: ${bridge.name}")
 
-    for (bridge <- bridges) {
-      bridge.entryPoints.finalise()
-      logInfo(Art.logTitle, s"Finalized bridge: ${bridge.name}")
-    }
-
-    ArtTimer_Ext.finalise()
+    // clear pending ArtTimer events (also done before a test begins)
+    ArtTimer_Ext.m.keys.foreach(ArtTimer_Ext.clearTimeout)
   }
 
   /**

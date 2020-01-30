@@ -36,7 +36,7 @@ import org.sireum._
    *
    * (note: BridgeTestSuite exists only in the test scope)
    */
-  def initTest(): Unit = $
+  def initTest(bridge: Bridge): Unit = $
 
   /**
    * Precondition: executeInit() has been called prior.
@@ -46,7 +46,7 @@ import org.sireum._
    * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
    * This is to ensure no exceptions are overlooked during testing.
    */
-  def executeTest(): Unit = $
+  def executeTest(bridge: Bridge): Unit = $
 
   /**
    * Calls the finalize entry points on all registered bridges.
@@ -54,7 +54,7 @@ import org.sireum._
    *
    * (note: BridgeTestSuite exists only in the test scope)
    */
-  def finalizeTest(): Unit = $
+  def finalizeTest(bridge: Bridge): Unit = $
 
   /**
    * A method that replaces bridge.compute()'s calls to [[Art.sendOutput()]] in its equivalent testCompute() method.

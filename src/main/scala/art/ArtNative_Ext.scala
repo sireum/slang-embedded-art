@@ -58,6 +58,7 @@ object ArtNative_Ext {
 
   def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
     for (portId <- eventPortIds) {
+      receivedPortValues -= portId // remove stale events from previous dispatch
       eventPortVariables.get(portId) match {
         case scala.Some(data) =>
           eventPortVariables -= portId

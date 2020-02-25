@@ -9,8 +9,10 @@ object Art {
   type BridgeId = Z
   type Time = Z
 
-  val maxComponents: PortId = 29 // constant set during instantiation, must be < Z32.Max
-  val maxPorts: PortId = 1024 // constant set during instantiation, must be < Z32.Max
+  val z16max: PortId = org.sireum.conversions.Z16.toZ(Z16.Max) // 32,767
+
+  val maxComponents: PortId = z16max // constant set during instantiation, must be < Z32.Max
+  val maxPorts: PortId = z16max // constant set during instantiation, must be < Z32.Max
 
   val logTitle: String = "Art"
   val bridges: MS[BridgeId, MOption[Bridge]] = MS.create[BridgeId, MOption[Bridge]](maxComponents, MNone[Bridge]())

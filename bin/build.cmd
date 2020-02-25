@@ -187,7 +187,7 @@ for (i <- 0 until Os.cliArgs.size) {
     case string"test" => test()
     case string"test-js" => testJs()
     case string"m2" => m2()
-    case string"jitpack" => jitpack()
+    //case string"jitpack" => jitpack()
     case cmd =>
       usage()
       eprintln(s"Unrecognized command: $cmd")

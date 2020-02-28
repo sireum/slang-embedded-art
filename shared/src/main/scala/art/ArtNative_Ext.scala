@@ -2,6 +2,10 @@ package art
 
 import org.sireum._
 
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.atomic.AtomicBoolean
+
+
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 
 object ArtMessage {
@@ -91,23 +95,23 @@ object ArtNative_Ext {
     for (srcPortId <- eventPortIds ++ dataPortIds) {
       sentPortValues.get(srcPortId) match {
         case scala.Some(msg) =>
-          ArtDebug_Ext.portListenerCallback(srcPortId, msg.data)
+          // todo send on emission as well as receive
           for(dstPortId <- Art.connections(srcPortId).elements) {
-            
+
             // simulate sending msg via transport middleware
-            
+
             val _msg = msg.copy(dstPortId = dstPortId, sendOutputTimestamp = Art.time())
-            
+
             Art.port(dstPortId).mode match {
               case PortMode.DataIn | PortMode.DataOut =>
                 dataPortVariables(dstPortId) = _msg
               case PortMode.EventIn | PortMode.EventOut =>
                 eventPortVariables(dstPortId) = _msg
             }
-            
+
             _msg.dstArrivalTimestamp = Art.time()
-            
-            ArtDebug_Ext.portListenerCallback(dstPortId, _msg.data)
+
+            ArtDebug_Ext.outputCallback(srcPortId, dstPortId, _msg.data, _msg.dstArrivalTimestamp)
           }
           sentPortValues -= srcPortId
         case _ =>
@@ -154,8 +158,8 @@ object ArtNative_Ext {
       logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
     }
 
-    var terminated = false
-    var numTerminated = 0
+    val terminated = new AtomicBoolean()
+    val numTerminated = new CountDownLatch(bridges.size)
 
     for (bridge <- bridges) {
       val rate = bridge.dispatchProtocol match {
@@ -168,7 +172,7 @@ object ArtNative_Ext {
         ArtNative_Ext.synchronized {
           ArtNative_Ext.wait()
         }
-        while (!terminated) {
+        while (!terminated.get()) {
           Thread.sleep((rate * slowdown).toMP.toLong)
           if (shouldDispatch(bridge.id))
             try {
@@ -179,12 +183,10 @@ object ArtNative_Ext {
             catch {
               case x : Throwable =>
                 x.printStackTrace()
-                terminated = true
+                terminated.set(true)
             }
         }
-        ArtNative_Ext.synchronized {
-          numTerminated += 1
-        }
+        numTerminated.countDown()
       }).start()
     }
 
@@ -192,16 +194,15 @@ object ArtNative_Ext {
 
     logInfo(Art.logTitle, s"Start execution (press Enter twice to terminate) ...")
 
+    ArtDebug_Ext.start()
+
     ArtNative_Ext.synchronized {
       ArtNative_Ext.notifyAll()
     }
 
     Console.in.readLine()
-    terminated = true
-
-    while (numTerminated != bridges.size) {
-      Thread.sleep(1000)
-    }
+    terminated.set(true)
+    numTerminated.await()
     logInfo(Art.logTitle, s"End execution...")
 
     for (bridge <- bridges) {
@@ -210,6 +211,7 @@ object ArtNative_Ext {
     }
 
     ArtTimer_Ext.finalise()
+    ArtDebug_Ext.stop()
   }
 
   def log(kind: String, title: String, msg: String): Unit = {

@@ -96,8 +96,8 @@ def compile(): Unit = {
     }
     tipe()
     println("Compiling ...")
-    mill.call(ISZ("all", "hamr.codegen.art.jvm.tests.compile",
-      "hamr.codegen.art.js.tests.compile")).at(home).console.runCheck()
+    mill.call(ISZ("all", "art.jvm.tests.compile",
+      "art.js.tests.compile")).at(home).console.runCheck()
     println()
   }
 }
@@ -106,18 +106,18 @@ def compile(): Unit = {
 def test(): Unit = {
   compile()
   println("Running shared tests ...")
-  mill.call(ISZ("hamr.codegen.art.shared.tests")).at(home).console.runCheck()
+  mill.call(ISZ("art.shared.tests")).at(home).console.runCheck()
   println()
 
   println("Running jvm tests ...")
-  mill.call(ISZ("hamr.codegen.art.jvm.tests")).at(home).console.runCheck()
+  mill.call(ISZ("art.jvm.tests")).at(home).console.runCheck()
   println()
 }
 
 
 def testJs(): Unit = {
   println("Running js tests ...")
-  mill.call(ISZ("hamr.codegen.art.js.tests")).at(home).console.runCheck()
+  mill.call(ISZ("art.js.tests")).at(home).console.runCheck()
   println()
 }
 

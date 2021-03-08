@@ -91,6 +91,16 @@ object ArtNative_Ext {
     return data
   }
 
+  def getValueBox[I](portId: Art.PortId, result: MBox[Option[I]]): Unit = {
+    result.value = getValue(portId).map(_.asInstanceOf[I])
+  }
+
+  def alloc[I]: MBox[Option[I]] = MBox(None())
+
+  // val t = ArtNative.alloc[T]
+  //
+  // union MBox_T t = { .TYPE = TMBox_T };
+
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
     for (srcPortId <- eventPortIds ++ dataPortIds) {
       sentPortValues.get(srcPortId) match {

@@ -14,6 +14,10 @@ import org.sireum._
 
   def getValue(portId: Art.PortId): Option[DataContent] = $
 
+  def getValueBox[I](portId: Art.PortId, result: MBox[Option[I]]): Unit = $
+
+  def alloc[I]: MBox[Option[I]] = $
+
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = $
 
   def logInfo(title: String, msg: String): Unit = $

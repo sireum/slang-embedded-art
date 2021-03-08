@@ -65,6 +65,10 @@ object Art {
     return ArtNative.getValue(portId)
   }
 
+  def getValueBox[I](portId: PortId, result: MBox[Option[I]]): Unit = { // GET_VALUE
+    ArtNative.getValueBox(portId, result)
+  }
+
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
     ArtNative.sendOutput(eventPortIds, dataPortIds)
   }

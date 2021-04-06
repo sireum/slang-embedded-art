@@ -27,11 +27,17 @@ val art = "hamr-art"
 
 val homeDir = Os.slashDir.up.canon
 
-val artShared = moduleShared(
+val artShared = moduleSharedPub(
   id = art,
   baseDir = homeDir,
   sharedDeps = sharedId(library),
-  sharedIvyDeps = ISZ()
+  sharedIvyDeps = ISZ(),
+  pubOpt = pub(
+    desc = "HAMR AADL Runtime",
+    url = "github.com/sireum/art",
+    licenses = org.sireum.project.ProjectUtil.bsd2,
+    devs = ISZ(jasonBelt, johnHatcliff, matthewWeis, robby)
+  )
 )
 
 val project = Project.empty + artShared

@@ -52,10 +52,10 @@ import org.sireum._
 
 
 @enum object PortMode {
-  'DataIn
-  'DataOut
-  'EventIn
-  'EventOut
+  "DataIn"
+  "DataOut"
+  "EventIn"
+  "EventOut"
 }
 
 @datatype trait UPort {
@@ -106,8 +106,10 @@ object Bridge {
     def recover(): Unit
 
     def finalise(): Unit
-    
+
     def testCompute(): Unit = { println("Default testCompute") }
+
+    def testInitialise(): Unit
   }
 
   @datatype class Ports(all: ISZ[UPort],

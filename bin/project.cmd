@@ -35,7 +35,7 @@ val artShared = moduleSharedPub(
   pubOpt = pub(
     desc = "HAMR AADL Runtime",
     url = "github.com/sireum/art",
-    licenses = org.sireum.project.ProjectUtil.bsd2,
+    licenses = bsd2,
     devs = ISZ(jasonBelt, johnHatcliff, matthewWeis, robby)
   )
 )

@@ -215,13 +215,8 @@ object ArtNative_Ext {
   }
 
   def log(kind: String, title: String, msg: String): Unit = {
-    Console.out.println(s"""{ "log" : "$kind", "title" : ${escape(title)}, "msg" : ${escape(msg)}, "time" : "${time()}" }""")
+    Console.out.println(st"""{ "log" : "$kind", "title" : ${Json.Printer.printString(title)}, "msg" : ${Json.Printer.printString(msg)}, "time" : "${time()}" }""".render)
     Console.out.flush()
-  }
-
-  def escape(raw: String): String = {
-    import scala.reflect.runtime.universe._
-    Literal(Constant(raw.value)).toString
   }
 
   def toZ(value: Long): Z = Z(value)

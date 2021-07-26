@@ -41,7 +41,7 @@ import org.sireum._
          DataPort:    (from.mode ≡ PortMode.DataOut) ≡ (to.mode ≡ PortMode.DataIn)
          EventPort:  (from.mode ≡ PortMode.EventOut) ≡ (to.mode ≡ PortMode.EventIn)  """
   */
-  
+
   def from: UPort
 
   def to: UPort
@@ -106,8 +106,10 @@ object Bridge {
     def recover(): Unit
 
     def finalise(): Unit
-    
+
     def testCompute(): Unit = { println("Default testCompute") }
+
+    def testInitialise(): Unit = { println("Default testInitialise") }
   }
 
   @datatype class Ports(all: ISZ[UPort],

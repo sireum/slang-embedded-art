@@ -58,16 +58,16 @@ object ArtNativeSlang {
     val r: B = (a, b) match {
       // sorting function to make prioritized sequence of event port ids
       //   compare p1 to p2  (p1 represents the port to process earlier, i.e., should have priority)
-      case (p1: UrgentPort[_], p2: UrgentPort[_]) =>
+      case (p1: UrgentPortProto, p2: UrgentPortProto) =>
         // if p1 has a strictly less urgency it comes after p2
         if (p1.urgency < p2.urgency) F
         // if p1 has a strictly greater urgency, it comes before p2
         else if (p1.urgency > p2.urgency) T
         // if p1 and p2 have the same urgency, the ordering is determined by arrival timestamps
         else inInfrastructurePorts.get(p1.id).get.dstArrivalTimestamp < inInfrastructurePorts.get(p2.id).get.dstArrivalTimestamp
-      case (_: UrgentPort[_], _: Port[_]) => T // urgent ports take precedence
-      case (_: Port[_], _: UrgentPort[_]) => F // urgent ports take precedence
-      case (p1: Port[_], p2: Port[_]) =>
+      case (_: UrgentPortProto, _: PortProto) => T // urgent ports take precedence
+      case (_: PortProto, _: UrgentPortProto) => F // urgent ports take precedence
+      case (p1: PortProto, p2: PortProto) =>
         inInfrastructurePorts.get(p1.id).get.dstArrivalTimestamp < inInfrastructurePorts.get(p2.id).get.dstArrivalTimestamp
     }
     return r

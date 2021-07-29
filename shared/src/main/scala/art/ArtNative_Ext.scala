@@ -2,32 +2,34 @@ package art
 
 import art.scheduling.Scheduler
 import org.sireum._
+import org.sireum.S64._
 import scala.collection.mutable.{Map => MMap}
 
 object ArtMessage {
-  val UNSET: Z = -1
+  val UNSET_PORT: Art.PortId = -1
+  val UNSET_TIME: Art.Time = s64"-1"
 }
 
 case class ArtMessage (data: DataContent,
 
-                       var srcPortId: Art.PortId = ArtMessage.UNSET,
-                       var dstPortId: Art.PortId = ArtMessage.UNSET,
+                       var srcPortId: Art.PortId = ArtMessage.UNSET_PORT,
+                       var dstPortId: Art.PortId = ArtMessage.UNSET_PORT,
 
                        // when putValue was called by producer
-                       var putValueTimestamp: Z = ArtMessage.UNSET,
+                       var putValueTimestamp: Art.Time = ArtMessage.UNSET_TIME,
 
                        // when sendOutput transferred message from out port var of producer
-                       var sendOutputTimestamp: Z = ArtMessage.UNSET,
+                       var sendOutputTimestamp: Art.Time = ArtMessage.UNSET_TIME,
 
                        // when message arrived via transport layer
-                       var dstArrivalTimestamp: Z = ArtMessage.UNSET,
+                       var dstArrivalTimestamp: Art.Time = ArtMessage.UNSET_TIME,
 
                        // when receiveInput transferred message to in port vars of consumer
-                       var receiveInputTimestamp: Z = ArtMessage.UNSET
+                       var receiveInputTimestamp: Art.Time = ArtMessage.UNSET_TIME
                       )
 
 object ArtNative_Ext {
-  val noTime: Art.Time = 0
+  val noTime: Art.Time = s64"0"
 
   val slowdown: Z = 1
 
@@ -226,7 +228,7 @@ object ArtNative_Ext {
 
   def logDebug(title: String, msg: String): Unit = log("debug", title, msg)
 
-  def time(): Art.Time = toZ(System.currentTimeMillis())
+  def time(): Art.Time = toS64(System.currentTimeMillis())
 
   //===============================================================================
   //  AADL Thread/Scheduling services
@@ -299,7 +301,7 @@ object ArtNative_Ext {
     Console.out.flush()
   }
 
-  def toZ(value: Long): Z = Z(value)
+  def toS64(value: Long): S64 = S64(value)
 
   def concMap[K, V](): MMap[K, V] = {
     import org.sireum.$internal.CollectionCompat.Converters._

@@ -8,7 +8,7 @@ import art.scheduling.Scheduler
 object Art {
   type PortId = Z
   type BridgeId = Z
-  type Time = Z
+  type Time = S64 // Z might be too small after transpiling
 
   val z16max: PortId = org.sireum.conversions.Z16.toZ(Z16.Max) // 32,767
 

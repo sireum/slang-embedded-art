@@ -3,10 +3,12 @@
 package art
 
 import org.sireum._
+import org.sireum.S64._
 import art.DispatchPropertyProtocol.{Periodic, Sporadic}
 
 object ArtSlangMessage {
-  val UNSET: Z = -1
+  val UNSET_PORT: Art.PortId = -1
+  val UNSET_TIME: Art.Time = s64"-1"
 }
 
 @datatype class ArtSlangMessage(data: DataContent,
@@ -15,16 +17,16 @@ object ArtSlangMessage {
                                 dstPortId: Art.PortId,
 
                                 // when putValue was called by producer
-                                putValueTimestamp: Z,
+                                putValueTimestamp: Art.Time,
 
                                 // when sendOutput transferred message from out port var of producer
-                                sendOutputTimestamp: Z,
+                                sendOutputTimestamp: Art.Time,
 
                                 // when message arrived via transport layer
-                                dstArrivalTimestamp: Z,
+                                dstArrivalTimestamp: Art.Time,
 
                                 // when receiveInput transferred message to in port vars of consumer
-                                receiveInputTimestamp: Z
+                                receiveInputTimestamp: Art.Time
                                )
 
 object ArtNativeSlang {
@@ -73,6 +75,21 @@ object ArtNativeSlang {
     return r
   }
 
+  def sort(ports: ISZ[UPort]): ISZ[UPort] = {
+    def insert(p: UPort, sorted: ISZ[UPort]): ISZ[UPort] = {
+      if(sorted.isEmpty) { return ISZ(p) }
+      else {
+        if(lt(sorted(0), p)) { return sorted(0) +: insert(p, ops.ISZOps(sorted).tail) }
+        else { return p +: sorted }
+      }
+    }
+    if(ports.isEmpty) { return ports}
+    else {
+      val sorted = sort(ops.ISZOps(ports).tail)
+      return insert(ports(0), sorted)
+    }
+  }
+
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
     val ret: DispatchStatus = Art.bridge(bridgeId).dispatchProtocol match {
       case Periodic(_) => TimeTriggered()
@@ -85,25 +102,11 @@ object ArtNativeSlang {
           halt(s"Unexpected: shouldDispatch() should have returned true in order to get here, however the incoming event ports are empty for bridge id ${bridgeId}")
         }
 
-        def sort(ports: ISZ[UPort]): ISZ[UPort] = {
-          def insert(p: UPort, sorted: ISZ[UPort]): ISZ[UPort] = {
-            if(sorted.isEmpty) { return ISZ(p) }
-            else {
-              if(lt(sorted(0), p)) { return sorted(0) +: insert(p, ops.ISZOps(sorted).tail) }
-              else { return p +: sorted }
-              //if(lt(sorted(0), p)) { return insert(p, ops.ISZOps(sorted).tail) }
-              //else { return sorted }
-            }
-          }
-          if(ports.isEmpty) { return ports}
-          else {
-            val sorted = sort(ops.ISZOps(ports).tail)
-            return insert(ports(0), sorted)
-          }
-        }
+        // TODO: transpiler issue with '+:' on sequences of traits
+        //val urgentFifo = sort(for(p <- portIds) yield Art.port(p))
+        //EventTriggered(for(p <- urgentFifo) yield p.id)
 
-        val urgentFifo = sort(for(p <- portIds) yield Art.port(p))
-        EventTriggered(for(p <- urgentFifo) yield p.id)
+        EventTriggered(portIds)
     }
     return ret
   }
@@ -130,7 +133,7 @@ object ArtNativeSlang {
     // wrap the Art.DataContent value into an ArtMessage with time stamps
     outPortVariables = outPortVariables + (portId ~>
       ArtSlangMessage(data = data, srcPortId = portId, putValueTimestamp = Art.time(),
-        dstPortId = ArtSlangMessage.UNSET, sendOutputTimestamp = ArtSlangMessage.UNSET, dstArrivalTimestamp = ArtSlangMessage.UNSET, receiveInputTimestamp = ArtSlangMessage.UNSET))
+        dstPortId = ArtSlangMessage.UNSET_PORT, sendOutputTimestamp = ArtSlangMessage.UNSET_TIME, dstArrivalTimestamp = ArtSlangMessage.UNSET_TIME, receiveInputTimestamp = ArtSlangMessage.UNSET_TIME))
   }
 
   def getValue(portId: Art.PortId): Option[DataContent] = {

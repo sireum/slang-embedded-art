@@ -2,13 +2,14 @@
 package art.scheduling.roundrobin
 
 import org.sireum._
+import org.sireum.S64._
 import art.scheduling.Scheduler
 import art.{Art, ArtNative, DispatchPropertyProtocol}
 
 @record class RoundRobin(bridges: ISZ[art.Bridge]) extends Scheduler {
 
-  var lastDispatch: MS[Art.BridgeId, Art.Time] = MS.create(bridges.size, 0)
-  var lastSporadic: MS[Art.BridgeId, Art.Time] = MS.create(bridges.size, 0)
+  var lastDispatch: MS[Art.BridgeId, Art.Time] = MS.create(bridges.size, s64"0")
+  var lastSporadic: MS[Art.BridgeId, Art.Time] = MS.create(bridges.size, s64"0")
 
   override def initialize(): Unit = {
     RoundRobinExtensions.init()
@@ -24,13 +25,13 @@ import art.{Art, ArtNative, DispatchPropertyProtocol}
   def shouldDispatch(bridge: art.Bridge): B = {
     bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
-        if(Art.time() - lastDispatch(bridge.id) > period) {
+        if(Art.time() - lastDispatch(bridge.id) > conversions.Z.toS64(period)) {
           return ArtNative.shouldDispatch(bridge.id)  // will always return true
         } else {
           return F
         }
       case DispatchPropertyProtocol.Sporadic(minRate) =>
-        if(Art.time() - lastSporadic(bridge.id) < minRate) {
+        if(Art.time() - lastSporadic(bridge.id) < conversions.Z.toS64(minRate)) {
           return F
         } else {
           // check if there are events waiting in incoming infrastructure port

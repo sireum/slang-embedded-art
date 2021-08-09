@@ -72,7 +72,7 @@ object Art {
 
   /** The seL4 platform doesn't use the bridges data structure and its
     * version of the loggers ignore the 'title' parameter. Not pattern matching
-    * here as that adds an MOption to the stack which increases the stack size.
+    * here as that adds an Option to the stack which increases the stack size.
     */
   def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = {
     if(bridges(bridgeId).nonEmpty) {

@@ -167,7 +167,7 @@ object ArtNative_Ext {
         case scala.Some(msg) =>
           // move payload from out port port variables to the out infrastructure ports
           outInfrastructurePorts(srcPortId) = outPortVariables(srcPortId)
-
+          outPortVariables -= srcPortId
 
           // simulate sending msg via transport middleware
           for(dstPortId <- Art.connections(srcPortId).elements) {

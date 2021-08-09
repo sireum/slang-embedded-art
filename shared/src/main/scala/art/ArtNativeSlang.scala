@@ -155,12 +155,16 @@ object ArtNativeSlang {
 
           // move payload from out port port variables to the out infrastructure ports
           outInfrastructurePorts = outInfrastructurePorts + (srcPortId ~> msg)
+          outPortVariables = outPortVariables - ((srcPortId, msg))
 
           // simulate sending msg via transport middleware
           for(dstPortId <- Art.connections(srcPortId)) {
             val _msg = msg(dstPortId = dstPortId, sendOutputTimestamp = Art.time())
 
-            inInfrastructurePorts = inInfrastructurePorts + (dstPortId ~> _msg)
+            // send via middleware
+
+            inInfrastructurePorts = inInfrastructurePorts + (dstPortId ~>
+              _msg(dstArrivalTimestamp = Art.time()))
           }
 
           // payload delivered so remove it from out infrastructure port

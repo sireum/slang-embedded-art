@@ -149,7 +149,9 @@ for (i <- 0 until Os.cliArgs.size) {
     case string"test" =>
       cloneRuntime()
       test()
-    case string"m2" => m2()
+    case string"m2" =>
+      cloneRuntime()
+      m2()
     //case string"jitpack" => jitpack()
     case cmd =>
       usage()

@@ -2,6 +2,6 @@ jdk:
   - oraclejdk8
 before_install:
   - bin/init.sh
-  - export SIREUM_HOME=bin/
+  - export SIREUM_HOME=.
 install:
   - bin/build.cmd m2

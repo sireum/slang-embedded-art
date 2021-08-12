@@ -132,6 +132,12 @@ def m2(): Os.Path = {
   val p4t = home / "bin" / "project4testing.cmd"
   proc"${p4t.string}".at(home).console.runCheck()
 
+
+  val f = home / "project.json"
+  assert(f.exists, s"$f does not exist")
+  println(s"Reading from $f")
+  println(f.read)
+
   val repository = Os.home / ".m2" / "repository"
   val artRepo = repository / "org" / "sireum" / "slang-embedded-art"
   artRepo.removeAll()

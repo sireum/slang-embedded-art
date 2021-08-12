@@ -3,5 +3,6 @@ jdk:
 before_install:
   - export SIREUM_PROVIDED_JAVA=true
   - bin/init.sh
+  - export SIREUM_HOME=bin/
 install:
   - bin/build.cmd m2

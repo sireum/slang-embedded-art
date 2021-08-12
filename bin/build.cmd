@@ -47,7 +47,7 @@ import org.sireum._
 
 def usage(): Unit = {
   println("Sireum HAMR AADL Runtime Services /build")
-  println("Usage: ( compile | test | test-js | m2 | jitpack )+")
+  println("Usage: ( compile | test | m2 | jitpack )+")
 }
 
 
@@ -59,11 +59,13 @@ if (Os.cliArgs.isEmpty) {
 
 val homeBin = Os.slashDir
 val home = homeBin.up
-val sireumJar = homeBin / "sireum.jar"
 val mill = homeBin / "mill.bat"
-var didTipe = F
-var didCompile = F
-var didM2 = F
+val sireum : Os.Path = homeBin / (if (Os.isWin) "sireum.bat" else "sireum")
+val sireumJar = homeBin / "sireum.jar"
+
+val proyekName: String = "sireum-proyek"
+val project: Os.Path = homeBin / "project4testing.cmd"
+
 
 
 def downloadMill(): Unit = {
@@ -77,49 +79,30 @@ def downloadMill(): Unit = {
 
 
 def tipe(): Unit = {
-  if (!didTipe) {
-    didTipe = T
-    println("Slang type checking ...")
-    Os.proc(ISZ("java", "-jar", sireumJar.string,
-      "slang", "tipe", "--verbose", "-r", "-s", home.string)).at(home).console.runCheck()
-    println()
-  }
+  println("Slang type checking ...")
+  Os.proc(ISZ(sireum.string, "slang", "tipe", "--verbose", "-r", "-x", "out", "-s", home.string)).
+    at(home).console.runCheck()
+  println()
 }
-
 
 def compile(): Unit = {
-  if (!didCompile) {
-    didCompile = T
-    if (didM2) {
-      didM2 = F
-      (home / "out").removeAll()
-    }
-    tipe()
-    println("Compiling ...")
-    mill.call(ISZ("all", "art.jvm.tests.compile",
-      "art.js.tests.compile")).at(home).console.runCheck()
-    println()
-  }
-}
+  tipe()
 
+  println("Compiling ...")
+  proc"$sireum proyek compile --project ${project} -n $proyekName --par --sha3 .".at(home).console.runCheck()
+  println()
+}
 
 def test(): Unit = {
-  compile()
-  println("Running shared tests ...")
-  mill.call(ISZ("art.shared.tests")).at(home).console.runCheck()
-  println()
+  tipe()
 
-  println("Running jvm tests ...")
-  mill.call(ISZ("art.jvm.tests")).at(home).console.runCheck()
-  println()
-}
+  val names: String = "art"
 
-
-def testJs(): Unit = {
-  println("Running js tests ...")
-  mill.call(ISZ("art.js.tests")).at(home).console.runCheck()
+  println("Testing ...")
+  proc"$sireum proyek test --project ${project} -n ${proyekName} --par --sha3 . ${names}".at(home).console.runCheck()
   println()
 }
+
 
 /*
 def jitpack(): Unit = {
@@ -143,34 +126,14 @@ def jitpack(): Unit = {
 }
 */
 
-def m2(): Unit = {
-  didM2 = T
-  didCompile = F
-
-  val m2s: ISZ[ISZ[String]] =
-    for (pkg <- ISZ("art"); plat <- ISZ("shared", "jvm"))
-      yield ISZ(pkg, plat, "m2")
-
-  val m2Paths: ISZ[Os.Path] =
-    for (cd <- for (m2 <- m2s) yield st"${(m2, Os.fileSep)}".render) yield  home / "out" / cd
-
-  for (m2p <- m2Paths) {
-    m2p.removeAll()
-  }
-
-  (home / "out").removeAll()
-
-  Os.proc(ISZ[String](mill.string, "all") ++ (for (m2 <- m2s) yield st"${(m2, ".")}".render)).
-    at(home).env(ISZ("SIREUM_SOURCE_BUILD" ~> "false")).console.runCheck()
+def m2(): Os.Path = {
+  tipe()
 
   val repository = Os.home / ".m2" / "repository"
-
-  println()
-  println("Artifacts")
-  for (m2p <- m2Paths; p <- (m2p / "dest").overlayMove(repository, F, F, _ => T, T).values) {
-    println(s"* $p")
-  }
-  println()
+  val artRepo = repository / "org" / "sireum" / "slang-embedded-art"
+  artRepo.removeAll()
+  proc"$sireum proyek publish --project $project -n $proyekName --target jvm --par --sha3 --ignore-runtime --m2 ${repository.up.canon} . org.sireum".at(home).console.runCheck()
+  return artRepo
 }
 
 def cloneRuntime(): Unit ={
@@ -178,14 +141,14 @@ def cloneRuntime(): Unit ={
   Os.proc(ISZ[String]("git", "clone", "--depth=1", "https://github.com/sireum/runtime")).at(home).console.runCheck()
 }
 
-
-downloadMill()
-cloneRuntime()
 for (i <- 0 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
-    case string"compile" => compile()
-    case string"test" => test()
-    case string"test-js" => testJs()
+    case string"compile" =>
+      cloneRuntime()
+      compile()
+    case string"test" =>
+      cloneRuntime()
+      test()
     case string"m2" => m2()
     //case string"jitpack" => jitpack()
     case cmd =>

@@ -23,7 +23,7 @@ import org.sireum.project.Project
 val library = "library"
 val test = "test"
 
-val art = "hamr-art"
+val art = "slang-embedded-art"
 
 val homeDir = Os.slashDir.up.canon
 

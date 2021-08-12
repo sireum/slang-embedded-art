@@ -25,7 +25,7 @@ def usage(): Unit = {
   println("Usage: [ json ]")
 }
 
-var isDot = T
+var isDot = F
 
 Os.cliArgs match {
   case ISZ(string"json") => isDot = F

@@ -134,18 +134,6 @@ def m2(): Os.Path = {
   artRepo.removeAll()
   proc"$sireum proyek publish --project $project -n $proyekName --target jvm --par --sha3 --ignore-runtime --m2 ${repository.up.canon} . org.sireum".at(home).console.run()
 
-  val p4t = home / "bin" / "project4testing.cmd"
-  val p = home / "project.json"
-
-  println(s"Contents of ${p4t}")
-  println(p4t.read)
-  println()
-  println(s"Contents of ${p}")
-  println(p.read)
-  println()
-  println(s"Results of running ${p4t}")
-  proc"${p4t.string}".at(home).console.runCheck()
-
   return artRepo
 }
 

@@ -4,7 +4,5 @@ before_install:
   - unset JAVA_TOOL_OPTIONS
   - bin/init.sh
   - export SIREUM_HOME=.
-  - bin/debug.sh
-  - bin/sireum
 install:
   - bin/build.cmd m2

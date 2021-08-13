@@ -137,6 +137,7 @@ def m2(): Os.Path = {
   val p4t = home / "bin" / "project4testing.cmd"
   val p = home / "project.json"
 
+
   println(s"Contents of ${p4t}")
   println(p4t.read)
   println()

@@ -129,19 +129,23 @@ def jitpack(): Unit = {
 def m2(): Os.Path = {
   tipe()
 
-  val p4t = home / "bin" / "project4testing.cmd"
-  proc"${p4t.string}".at(home).console.runCheck()
-
-
-  val f = home / "project.json"
-  assert(f.exists, s"$f does not exist")
-  println(s"Reading from $f")
-  println(f.read)
-
   val repository = Os.home / ".m2" / "repository"
   val artRepo = repository / "org" / "sireum" / "slang-embedded-art"
   artRepo.removeAll()
   proc"$sireum proyek publish --project $project -n $proyekName --target jvm --par --sha3 --ignore-runtime --m2 ${repository.up.canon} . org.sireum".at(home).console.run()
+
+  val p4t = home / "bin" / "project4testing.cmd"
+  val p = home / "project.json"
+
+  println(s"Contents of ${p4t}")
+  println(p4t.read)
+  println()
+  println(s"Contents of ${p}")
+  println(p.read)
+  println()
+  println(s"Results of running ${p4t}")
+  proc"${p4t.string}".at(home).console.runCheck()
+
   return artRepo
 }
 

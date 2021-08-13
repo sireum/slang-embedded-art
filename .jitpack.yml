@@ -3,7 +3,7 @@ jdk:
 before_install:
   - bin/init.sh
   - export SIREUM_HOME=.
-  - wget -o bin/sireum.jar https://raw.githubusercontent.com/jasonbelt/aerhg/master/sireum.jar
+  - bin/debug.sh
   - bin/sireum
 install:
   - bin/build.cmd m2

@@ -1,7 +1,8 @@
 package art
 
-import art.scheduling.Scheduler
 import org.sireum._
+import art.DispatchPropertyProtocol.{Periodic, Sporadic}
+import art.scheduling.Scheduler
 import org.sireum.S64._
 import scala.collection.mutable.{Map => MMap}
 
@@ -249,30 +250,29 @@ object ArtNative_Ext {
   // JH: Refactored -- renamed port data structures
   //     ToDo: add comments justifying various sections of the logic by reference to standard clauses
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
-    // get ids for non-empty input event ports
-    val portIds = ISZ[Art.PortId](Art.bridge(bridgeId).ports.eventIns.elements.map(_.id).filter(inInfrastructurePorts.get(_).nonEmpty): _*)
-    if (portIds.isEmpty) {
-      // JH: This logic doesn't seem right to me.  Determined if something is time-triggered
-      // should be done by checking the dispatch protocol of the component.
-      TimeTriggered()
-    } else {
-      val urgentFifo = ops.ISZOps(portIds.map(Art.port(_))).sortWith { // reverse sort
-        // sorting function to make prioritized sequence of event port ids
-        //   compare p1 to p2  (p1 represents the port to process earlier, i.e., should have priority)
-        case (p1: UrgentPort[_], p2: UrgentPort[_]) =>
-          // if p1 has a strictly less urgency it comes after p2
-          if(p1.urgency < p2.urgency) F
-          // if p1 has a strictly greater urgency, it comes before p2
-          else if(p1.urgency > p2.urgency) T
-          // if p1 and p2 have the same urgency, the ordering is determined by arrival timestamps
-          else inInfrastructurePorts(p1.id).dstArrivalTimestamp < inInfrastructurePorts(p2.id).dstArrivalTimestamp
-        case (_: UrgentPort[_], _: Port[_]) => T // urgent ports take precedence
-        case (_: Port[_], _: UrgentPort[_]) => F // urgent ports take precedence
-        case (p1: Port[_], p2: Port[_]) =>
-          inInfrastructurePorts(p1.id).dstArrivalTimestamp < inInfrastructurePorts(p2.id).dstArrivalTimestamp
-      }.map(_.id)
-      EventTriggered(urgentFifo)
+    val ret: DispatchStatus = Art.bridges(bridgeId).get.dispatchProtocol match {
+      case Periodic(_) => TimeTriggered()
+      case Sporadic(_) =>
+        // get ids for non-empty input event ports
+        val portIds = ISZ[Art.PortId](Art.bridges(bridgeId).get.ports.eventIns.elements.map(_.id).filter(inInfrastructurePorts.get(_).nonEmpty): _*)
+        val urgentFifo = ops.ISZOps(portIds.map(Art.port(_))).sortWith { // reverse sort
+          // sorting function to make prioritized sequence of event port ids
+          //   compare p1 to p2  (p1 represents the port to process earlier, i.e., should have priority)
+          case (p1: UrgentPort[_], p2: UrgentPort[_]) =>
+            // if p1 has a strictly less urgency it comes after p2
+            if (p1.urgency < p2.urgency) F
+            // if p1 has a strictly greater urgency, it comes before p2
+            else if (p1.urgency > p2.urgency) T
+            // if p1 and p2 have the same urgency, the ordering is determined by arrival timestamps
+            else inInfrastructurePorts(p1.id).dstArrivalTimestamp < inInfrastructurePorts(p2.id).dstArrivalTimestamp
+          case (_: UrgentPort[_], _: Port[_]) => T // urgent ports take precedence
+          case (_: Port[_], _: UrgentPort[_]) => F // urgent ports take precedence
+          case (p1: Port[_], p2: Port[_]) =>
+            inInfrastructurePorts(p1.id).dstArrivalTimestamp < inInfrastructurePorts(p2.id).dstArrivalTimestamp
+        }.map(_.id)
+        EventTriggered(urgentFifo)
     }
+    return ret
   }
 
   //===============================================================================

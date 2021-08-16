@@ -91,12 +91,12 @@ object ArtNativeSlang {
   }
 
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
-    val ret: DispatchStatus = Art.bridge(bridgeId).dispatchProtocol match {
+    val ret: DispatchStatus = Art.bridges(bridgeId).get.dispatchProtocol match {
       case Periodic(_) => TimeTriggered()
       case Sporadic(_) =>
         // get ids for non-empty input event ports
         val portIds: ISZ[Art.PortId] =
-          for(p <- Art.bridge(bridgeId).ports.eventIns if inInfrastructurePorts.get(p.id).nonEmpty) yield p.id
+          for(p <- Art.bridges(bridgeId).get.ports.eventIns if inInfrastructurePorts.get(p.id).nonEmpty) yield p.id
 
         if(portIds.isEmpty) {
           halt(s"Unexpected: shouldDispatch() should have returned true in order to get here, however the incoming event ports are empty for bridge id ${bridgeId}")

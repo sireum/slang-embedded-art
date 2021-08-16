@@ -42,7 +42,7 @@ object ArtTimer_Ext {
 
     var b = new AtomicBoolean(true)
 
-    val bridge = Art.bridge(bridgeId)
+    val bridge = Art.bridges(bridgeId).get
     val eventOuts = bridge.ports.eventOuts.map(_.id)
     val dataOuts = bridge.ports.dataOuts.map(_.id)
 

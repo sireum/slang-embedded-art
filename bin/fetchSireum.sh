@@ -11,4 +11,4 @@ download() {
     exit 1
   fi
 }
-$(download sireum.jar https://raw.githubusercontent.com/jasonbelt/sireum_jar/master/sireum.jar) 
+$(download sireum.jar https://raw.githubusercontent.com/jasonbelt/sireum_jar/master/sireum.jar)

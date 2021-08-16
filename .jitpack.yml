@@ -1,8 +1,8 @@
 jdk:
   - oraclejdk8
 before_install:
-  - unset JAVA_TOOL_OPTIONS
   - bin/init.sh
   - export SIREUM_HOME=.
 install:
+  - $SIREUM_HOME/bin/sireum
   - bin/build.cmd m2

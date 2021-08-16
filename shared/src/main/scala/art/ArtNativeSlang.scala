@@ -102,11 +102,8 @@ object ArtNativeSlang {
           halt(s"Unexpected: shouldDispatch() should have returned true in order to get here, however the incoming event ports are empty for bridge id ${bridgeId}")
         }
 
-        // TODO: transpiler issue with '+:' on sequences of traits
-        //val urgentFifo = sort(for(p <- portIds) yield Art.port(p))
-        //EventTriggered(for(p <- urgentFifo) yield p.id)
-
-        EventTriggered(portIds)
+        val urgentFifo = sort(for(p <- portIds) yield Art.port(p))
+        EventTriggered(for(p <- urgentFifo) yield p.id)
     }
     return ret
   }

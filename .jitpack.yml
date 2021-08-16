@@ -3,7 +3,5 @@ jdk:
 before_install:
   - bin/init.sh
   - export SIREUM_HOME=.
-  - bin/fetchSireum.sh
 install:
-  - $SIREUM_HOME/bin/sireum
   - bin/build.cmd m2

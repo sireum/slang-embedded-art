@@ -47,7 +47,7 @@ import org.sireum._
 
 def usage(): Unit = {
   println("Sireum HAMR AADL Runtime Services /build")
-  println("Usage: ( compile | test | m2 | jitpack )+")
+  println("Usage: ( clean | compile | test | m2 | jitpack )+")
 }
 
 
@@ -142,8 +142,19 @@ def cloneRuntime(): Unit ={
   Os.proc(ISZ[String]("git", "clone", "--depth=1", "https://github.com/sireum/runtime")).at(home).console.runCheck()
 }
 
+def clean(): Unit = {
+  println(s"Cleaning ${home}")
+  val homeResources: ISZ[Os.Path] = ISZ("lib", "out", "runtime", "versions.properties").map(m => home / m)
+  val homeBinResources: ISZ[Os.Path] = ISZ("sireum.jar", "sireum").map(m => homeBin / m)
+  for(r <- (homeResources ++ homeBinResources) if r.exists) {
+    println(s"Deleting ${r}")
+    r.removeAll()
+  }
+}
+
 for (i <- 0 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
+    case string"clean" => clean()
     case string"compile" =>
       cloneRuntime()
       compile()

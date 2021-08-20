@@ -71,7 +71,7 @@ val project: Os.Path = homeBin / "project4testing.cmd"
 def downloadMill(): Unit = {
   if (!mill.exists) {
     println("Downloading mill ...")
-    mill.downloadFrom("http://files.sireum.org/mill-standalone")
+    mill.downloadFrom("https://github.com/sireum/releases/releases/download/mill/mill")
     mill.chmod("+x")
     println()
   }

@@ -5,7 +5,7 @@ import art.Art.Time
 import scala.collection.mutable.{Map => MMap, Set => MSet}
 
 object ArtDebug_Ext {
-  private val debugObjects: MMap[String, Any] = ArtNative_Ext.concMap()
+  private val debugObjects: MMap[String, Any] = concMap()
   private val listeners: MSet[ArtListener] = concSet()
 
   protected[art] def start(): Unit = {
@@ -53,9 +53,11 @@ object ArtDebug_Ext {
       // right now, there is no difference between treatment of data and event ports, but keep the logic
       // separate for further refactoring
       if(bridge.ports.dataIns.elements.map(_.id).contains(port)) {
-        ArtNative_Ext.inInfrastructurePorts(port) = ArtMessage(data)
+        //ArtNative_Ext.inInfrastructurePorts(port) = ArtMessage(data)
+        ArtNative.insertInPortValue(port, data)
       } else {
-        ArtNative_Ext.inInfrastructurePorts(port) = ArtMessage(data)
+        //ArtNative_Ext.inInfrastructurePorts(port) = ArtMessage(data)
+        ArtNative.insertInPortValue(port, data)
       }
     }
   }
@@ -68,5 +70,10 @@ object ArtDebug_Ext {
     import org.sireum.$internal.CollectionCompat.Converters._
     val m: java.util.Set[K] = java.util.concurrent.ConcurrentHashMap.newKeySet()
     m.asScala
+  }
+
+  def concMap[K, V](): MMap[K, V] = {
+    import org.sireum.$internal.CollectionCompat.Converters._
+    new java.util.concurrent.ConcurrentHashMap[K, V].asInstanceOf[java.util.Map[K, V]].asScala
   }
 }

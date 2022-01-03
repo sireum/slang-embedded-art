@@ -1,17 +1,20 @@
 package art
 
-import org.sireum.{B, F, ISZ, String, T}
+import art.Art.BridgeId
 import org.sireum.S64._
-import art.Art.{BridgeId, Time}
+import org.sireum.{B, String, Z}
 
-import scala.collection.mutable.{Map => MMap}
 import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.Executors
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.{Executors, TimeUnit}
+import scala.collection.mutable.{Map => MMap}
 
 object ArtTimer_Ext {
 
-  val m: MMap[String, AtomicBoolean] = ArtNative_Ext.concMap()
+  val noTime: Art.Time = s64"0"
+
+  val slowdown: Z = 1
+
+  val m: MMap[String, AtomicBoolean] = concMap()
   val executor = Executors.newSingleThreadScheduledExecutor()
 
   def finalise(): Unit = {
@@ -62,9 +65,14 @@ object ArtTimer_Ext {
 
     m.put(eventId, b)
 
-    val adjusted = wait.toMP.toLong * ArtNative_Ext.slowdown.toMP.toLong
+    val adjusted = wait.toMP.toLong * slowdown.toMP.toLong
     executor.schedule(task, adjusted, TimeUnit.MILLISECONDS)
 
     art.Art.logInfo(bridgeId, s"callback set for $eventId")
+  }
+
+  def concMap[K, V](): MMap[K, V] = {
+    import org.sireum.$internal.CollectionCompat.Converters._
+    new java.util.concurrent.ConcurrentHashMap[K, V].asInstanceOf[java.util.Map[K, V]].asScala
   }
 }

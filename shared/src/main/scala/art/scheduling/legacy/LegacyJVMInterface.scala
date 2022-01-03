@@ -1,10 +1,11 @@
 package art.scheduling.legacy
 
-import art.{Art, ArtNative, ArtNative_Ext, DispatchPropertyProtocol}
-import scala.collection.mutable.{Map => MMap}
+import art._
 import org.sireum._
 
-object LegacyInterface_Ext {
+import scala.collection.mutable.{Map => MMap}
+
+class LegacyJVMInterface extends LegacyInterface {
   val slowdown: Z = 1
 
   def computePhase(bridges: ISZ[art.Bridge]): Unit = {

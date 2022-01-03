@@ -40,19 +40,36 @@ import art.{Art, ArtNative, DispatchPropertyProtocol}
     }
   }
 
-  override def computePhase(): Unit = {
-    while(!RoundRobinExtensions.shouldStop()) {
-      for (bridge <- bridges) {
-        if(shouldDispatch(bridge)) {
-          lastDispatch(bridge.id) = Art.time()
-          bridge.entryPoints.compute()
+  def hyperPeriod(): Unit = {
+    for (bridge <- bridges) {
+      if (shouldDispatch(bridge)) {
+        lastDispatch(bridge.id) = Art.time()
+        bridge.entryPoints.compute()
 
-          if(bridge.dispatchProtocol.isInstanceOf[DispatchPropertyProtocol.Sporadic]) {
-            lastSporadic(bridge.id) = Art.time()
-          }
+        if (bridge.dispatchProtocol.isInstanceOf[DispatchPropertyProtocol.Sporadic]) {
+          lastSporadic(bridge.id) = Art.time()
         }
       }
     }
+  }
+
+  override def computePhase(): Unit = {
+    //while(!RoundRobinExtensions.shouldStop()) {
+    //  hyperPeriod()
+    //}
+
+    // infinite looping may lock up the interface so instead have the
+    // the platform impl figure out how to achieve that.
+
+    // Transpiler doesn't support passing functions
+    //RoundRobinExtensions.loop(hyperPeriod _)
+
+    // invoke hyperPeriod once here so that the transpiler picks it up
+    hyperPeriod()
+
+    // now have the platform implementations call hyperPeriod via 'this'
+    // using whatever loop mechanism they can implement
+    RoundRobinExtensions.loop(this)
   }
 
   override def finalizePhase(): Unit = {
@@ -65,5 +82,6 @@ import art.{Art, ArtNative, DispatchPropertyProtocol}
 
 @ext object RoundRobinExtensions {
   def init(): Unit = $
-  def shouldStop(): B = $
+
+  def loop(roundRobin: RoundRobin): Unit = $
 }

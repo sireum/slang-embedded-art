@@ -3,7 +3,7 @@
 package art.scheduling.legacy
 
 import org.sireum._
-import art.Art
+import art.{Art, Bridge}
 import art.scheduling.Scheduler
 
 @record class Legacy(bridges: ISZ[art.Bridge]) extends Scheduler {
@@ -18,7 +18,7 @@ import art.scheduling.Scheduler
   }
 
   override def computePhase(): Unit = {
-    LegacyInterface.computePhase(bridges)
+    LegacyExtensions.computePhase(bridges)
   }
 
   override def finalizePhase(): Unit = {
@@ -29,6 +29,6 @@ import art.scheduling.Scheduler
   }
 }
 
-@ext object LegacyInterface {
+@ext object LegacyExtensions {
   def computePhase(bridges: ISZ[art.Bridge]): Unit = $
 }

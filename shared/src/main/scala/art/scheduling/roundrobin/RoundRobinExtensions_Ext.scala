@@ -1,22 +1,23 @@
 package art.scheduling.roundrobin
 
-import art.{Art, ArtNative}
-import org.sireum.B
-import java.util.concurrent.atomic.AtomicBoolean
+import org.sireum._
+import org.sireum.$internal.###
+
+trait RoundRobinInterface {
+  def init(): Unit
+
+  def loop(roundRobin: RoundRobin): Unit
+}
 
 object RoundRobinExtensions_Ext {
-  var terminated = new AtomicBoolean(false)
+
+  var roundRobinInterface: RoundRobinInterface = _
 
   def init(): Unit = {
-    ArtNative.logInfo(Art.logTitle, s"Start execution (press Enter twice to terminate) ...")
-
-    new Thread(() => {
-      Console.in.readLine()
-      terminated.set(true)
-    }).start()
+    roundRobinInterface.init()
   }
 
-  def shouldStop(): B = {
-    return terminated.get()
+  def loop(roundRobin: RoundRobin): Unit = {
+    roundRobinInterface.loop(roundRobin)
   }
 }

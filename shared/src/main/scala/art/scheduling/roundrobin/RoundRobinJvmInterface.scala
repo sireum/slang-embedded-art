@@ -3,7 +3,7 @@ package art.scheduling.roundrobin
 import art.{Art, ArtNative}
 import java.util.concurrent.atomic.AtomicBoolean
 
-class RoundRobinJVMInterface extends RoundRobinInterface {
+class RoundRobinJvmInterface extends RoundRobinInterface {
   var terminated = new AtomicBoolean(false)
 
   def init(): Unit = {

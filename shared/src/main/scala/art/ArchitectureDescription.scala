@@ -103,13 +103,13 @@ object Bridge {
 
     def initialise(): Unit
 
-    def activate(): Unit
+//  def activate(): Unit  -- omit until fully supported
 
-    def deactivate(): Unit
+//  def deactivate(): Unit  -- omit until fully supported
 
     def compute(): Unit
 
-    def recover(): Unit
+//  def recover(): Unit     -- omit until fully supported
 
     def finalise(): Unit
 

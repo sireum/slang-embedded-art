@@ -190,13 +190,38 @@ object Art {
     // register bridge passed to this method
     register(bridge)
 
-    // let ArtNative reset itself as well
+    // call ArtNative to reset the state of the specific thread component
     ArtNative.initTest(bridge)
   }
 
-  def executeTest(bridge: Bridge): Unit = {
-    ArtNative.executeTest(bridge)
+ /**
+ * Executes a component (identified by bridge) Initialize Entry Point (application code)
+ * for the purposes of unit testing.
+ *
+ * This infrastructure method is called with automatically generated unit testing support code.
+ * The developer-facing version of this method (called by a developer unit test)
+ * provided by the unit testing support code hides the bridge argument.  The bridge
+ * value is retrieved from the testing infrastructure code before passing the call
+ * through to this method.
+ */
+  def testInitialise(bridge: Bridge): Unit = {
+    ArtNative.testInitialise(bridge)
   }
+
+ /**
+  * Executes a component (identified by bridge) Compute Entry Point (application code)
+  * for the purposes of unit testing.
+  *
+  * This infrastructure method is called with automatically generated unit testing support code.
+  * The developer-facing version of this method (called by a developer unit test)
+  * provided by the unit testing support code hides the bridge argument.  The bridge
+  * value is retrieved from the testing infrastructure code before passing the call
+  * through to this method.
+  */
+  def testCompute(bridge: Bridge): Unit = {
+    ArtNative.testCompute(bridge)
+  }
+
 
   def finalizeTest(bridge: Bridge): Unit = {
     ArtNative.finalizeTest(bridge)

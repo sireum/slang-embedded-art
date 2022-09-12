@@ -49,27 +49,42 @@ import art.scheduling.Scheduler
 
   /**
    * Calls the initialize entry points on all registered bridges.
-   * Testers should NOT call this method because BridgeTestSuite will automatically call this method before each test.
    *
-   * (note: BridgeTestSuite exists only in the test scope)
+   * An analogue to this method does not show up in developer-written unit tests because
+   * the it's invoked behind the scenes by the automatically generated unit test infrastructure
+   * as a prelude to each test.
+   *
    */
   def initTest(bridge: Bridge): Unit = $
 
   /**
-   * Precondition: executeInit() has been called prior.
+   * Executes the application code in the Initialize Entry Point for the component (identified
+   * by given bridge) for the purposes of testing.
    *
-   * Executes the testCompute() method one time for each registered bridge.
+   * Precondition: testInit() has been called prior.
+   *
+   * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
+   * This is to ensure no exceptions are overlooked during testing.
+  */
+  def testInitialise(bridge: Bridge): Unit = $
+
+  /**
+   * Executes the application code in the Compute Entry Point for the component (identified
+   * by given bridge) for the purposes of testing.
+   *
+   * Precondition: initTest() has been called prior.
    *
    * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
    * This is to ensure no exceptions are overlooked during testing.
    */
-  def executeTest(bridge: Bridge): Unit = $
+  def testCompute(bridge: Bridge): Unit = $
 
   /**
    * Calls the finalize entry points on all registered bridges.
-   * Testers should NOT call this method because BridgeTestSuite will automatically call this method after each test.
    *
-   * (note: BridgeTestSuite exists only in the test scope)
+   * An analogue to this method does not show up in developer-written unit tests because
+   * the it's invoked behind the scenes by the automatically generated unit test infrastructure
+   * as a postlude to each test.
    */
   def finalizeTest(bridge: Bridge): Unit = $
 

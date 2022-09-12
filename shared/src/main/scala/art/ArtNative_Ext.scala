@@ -316,14 +316,14 @@ object ArtNative_Ext {
   /////////////
 
   /**
-   * Calls the initialize entry points on all registered bridges AND resets all inputs and outputs for all ports.
-   * Testers should NOT call this method because BridgeTestSuite will automatically call this method before each test.
+   * Sets up the state of a thread component (identified by bridge) for the purpose of
+   * testing.
    *
-   * (note: BridgeTestSuite exists only in the test scope)
+   * An analogue to this method does not show up in developer-written unit tests because
+   * it's invoked behind the scenes by the automatically generated unit test infrastructure
+   * as a prelude to each test.
    */
   def initTest(bridge: Bridge): Unit = {
-    // note that all ports and bridges were deleted by Art's initTest
-
     // delete ALL port values
     inInfrastructurePorts.clear()
     inPortVariables.clear()
@@ -337,15 +337,31 @@ object ArtNative_Ext {
     logInfo(Art.logTitle, s"Initialized bridge: ${bridge.name}")
   }
 
+ /**
+  * Executes the application code in the Initialize Entry Point for the component (identified
+  * by given bridge) for the purposes of testing.  This is achieved by
+  * calling the testInitialise() method on given bridge.
+  *
+  * Precondition: initTest() has been called prior.
+  *
+  * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
+  * This is to ensure no exceptions are overlooked during testing.
+  */
+  def testInitialise(bridge: Bridge): Unit = {
+    bridge.entryPoints.testInitialise()
+  }
+
   /**
-   * Precondition: executeInit() has been called prior.
+   * Executes the application code in the Compute Entry Point for the component (identified
+   * by given bridge) for the purposes of testing.  This is achieved by
+   * calling the testCompute() method on given bridge.
    *
-   * Executes the testCompute() method one time for each registered bridge.
+   * Precondition: initTest() has been called prior.
    *
    * Unlike [[Art.run()]], this method does NOT wrap compute calls in a try-catch block.
    * This is to ensure no exceptions are overlooked during testing.
    */
-  def executeTest(bridge: Bridge): Unit = {
+  def testCompute(bridge: Bridge): Unit = {
     bridge.entryPoints.testCompute()
   }
 
@@ -353,7 +369,6 @@ object ArtNative_Ext {
    * Calls the finalize entry points on all registered bridges.
    * Testers should NOT call this method because BridgeTestSuite will automatically call this method after each test.
    *
-   * (note: BridgeTestSuite exists only in the test scope)
    */
   def finalizeTest(bridge: Bridge): Unit = {
     bridge.entryPoints.finalise()

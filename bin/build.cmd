@@ -47,7 +47,7 @@ import org.sireum._
 
 def usage(): Unit = {
   println("Sireum HAMR AADL Runtime Services /build")
-  println("Usage: ( clean | compile | test | m2 | jitpack )+")
+  println("Usage: ( compile | test | m2 | jitpack )+")
 }
 
 
@@ -61,12 +61,43 @@ val homeBin = Os.slashDir
 val home = homeBin.up
 val mill = homeBin / "mill.bat"
 val sireum : Os.Path = homeBin / (if (Os.isWin) "sireum.bat" else "sireum")
-val sireumJar = homeBin / "sireum.jar"
 
 val proyekName: String = "sireum-proyek"
 val project: Os.Path = homeBin / "project4testing.cmd"
 
 
+val versions = (home / "versions.properties").properties
+
+val cache: Os.Path = Os.env("SIREUM_CACHE") match {
+  case Some(p) =>
+    val d = Os.path(p)
+    if (!d.exists) {
+      d.mkdirAll()
+    }
+    d
+  case _ => Os.home / "Downloads" / "sireum"
+}
+
+def installCoursier(): Unit = {
+  val version = versions.get("org.sireum.version.coursier").get
+  val ver = home / "lib" / "coursier.jar.ver"
+  if (ver.exists && ver.read == version) {
+    return
+  }
+
+  val drop = cache / s"coursier-$version.jar"
+  if (!drop.exists) {
+    println(s"Downloading Coursier $version ...")
+    val url = s"https://github.com/coursier/coursier/releases/download/v$version/coursier.jar"
+    drop.downloadFrom(url)
+    println()
+  }
+
+  val coursierJar = home / "lib" / "coursier.jar"
+  drop.copyOverTo(coursierJar)
+
+  ver.writeOver(version)
+}
 
 def downloadMill(): Unit = {
   if (!mill.exists) {
@@ -142,19 +173,10 @@ def cloneRuntime(): Unit ={
   Os.proc(ISZ[String]("git", "clone", "--depth=1", "https://github.com/sireum/runtime")).at(home).console.runCheck()
 }
 
-def clean(): Unit = {
-  println(s"Cleaning ${home}")
-  val homeResources: ISZ[Os.Path] = ISZ("lib", "out", "runtime", "versions.properties").map(m => home / m)
-  val homeBinResources: ISZ[Os.Path] = ISZ("sireum.jar", "sireum").map(m => homeBin / m)
-  for(r <- (homeResources ++ homeBinResources) if r.exists) {
-    println(s"Deleting ${r}")
-    r.removeAll()
-  }
-}
+installCoursier()
 
 for (i <- 0 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
-    case string"clean" => clean()
     case string"compile" =>
       cloneRuntime()
       compile()

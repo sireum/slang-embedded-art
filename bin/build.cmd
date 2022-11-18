@@ -47,7 +47,7 @@ import org.sireum._
 
 def usage(): Unit = {
   println("Sireum HAMR AADL Runtime Services /build")
-  println("Usage: ( compile | test | m2 | jitpack )+")
+  println("Usage: ( compile | test | m2 )+")
 }
 
 
@@ -64,49 +64,6 @@ val sireum : Os.Path = homeBin / (if (Os.isWin) "sireum.bat" else "sireum")
 
 val proyekName: String = "sireum-proyek"
 val project: Os.Path = homeBin / "project4testing.cmd"
-
-
-val versions = (home / "versions.properties").properties
-
-val cache: Os.Path = Os.env("SIREUM_CACHE") match {
-  case Some(p) =>
-    val d = Os.path(p)
-    if (!d.exists) {
-      d.mkdirAll()
-    }
-    d
-  case _ => Os.home / "Downloads" / "sireum"
-}
-
-def installCoursier(): Unit = {
-  val version = versions.get("org.sireum.version.coursier").get
-  val ver = home / "lib" / "coursier.jar.ver"
-  if (ver.exists && ver.read == version) {
-    return
-  }
-
-  val drop = cache / s"coursier-$version.jar"
-  if (!drop.exists) {
-    println(s"Downloading Coursier $version ...")
-    val url = s"https://github.com/coursier/coursier/releases/download/v$version/coursier.jar"
-    drop.downloadFrom(url)
-    println()
-  }
-
-  val coursierJar = home / "lib" / "coursier.jar"
-  drop.copyOverTo(coursierJar)
-
-  ver.writeOver(version)
-}
-
-def downloadMill(): Unit = {
-  if (!mill.exists) {
-    println("Downloading mill ...")
-    mill.downloadFrom("https://github.com/sireum/rolling/releases/download/mill/standalone")
-    mill.chmod("+x")
-    println()
-  }
-}
 
 
 def tipe(): Unit = {
@@ -135,28 +92,6 @@ def test(): Unit = {
 }
 
 
-/*
-def jitpack(): Unit = {
-  println("Triggering jitpack ...")
-  val r = mill.call(ISZ("jitPack", "--owner", "sireum", "--repo", "slang-embedded-art", "--lib", "library")).
-    at(home).console.run()
-  r match {
-    case r: Os.Proc.Result.Normal =>
-      println(r.out)
-      println(r.err)
-      if (!r.ok) {
-        eprintln(s"Exit code: ${r.exitCode}")
-      }
-    case r: Os.Proc.Result.Exception =>
-      eprintln(s"Exception: ${r.err}")
-    case _: Os.Proc.Result.Timeout =>
-      eprintln("Timeout")
-      eprintln()
-  }
-  println()
-}
-*/
-
 def m2(): Os.Path = {
   tipe()
 
@@ -173,7 +108,21 @@ def cloneRuntime(): Unit ={
   Os.proc(ISZ[String]("git", "clone", "--depth=1", "https://github.com/sireum/runtime")).at(home).console.runCheck()
 }
 
-installCoursier()
+def installToolsViaKekinian(): Unit = {
+  val builtIn = home / "runtime" / "library" / "shared" / "src" / "main" / "scala" / "org" / "sireum" / "BuiltInTypes.slang"
+  if(!builtIn.exists) {
+    builtIn.write(".")
+  }
+  val kbuild = homeBin / "kbuild.cmd"
+  kbuild.downloadFrom("https://raw.githubusercontent.com/sireum/kekinian/master/bin/build.cmd")
+  proc"$sireum slang run $kbuild --help".at(homeBin).runCheck()
+  kbuild.remove()
+  if(builtIn.size == 1) {
+    (home / "runtime").removeAll()
+  }
+}
+
+installToolsViaKekinian()
 
 for (i <- 0 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
@@ -186,7 +135,6 @@ for (i <- 0 until Os.cliArgs.size) {
     case string"m2" =>
       cloneRuntime()
       m2()
-    //case string"jitpack" => jitpack()
     case cmd =>
       usage()
       eprintln(s"Unrecognized command: $cmd")

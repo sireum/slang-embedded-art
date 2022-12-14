@@ -1,10 +1,10 @@
 package art
 
 import org.sireum.S64._
-import org.sireum.{B, F, String}
+import org.sireum.{B, F, String, T}
 
-import java.util.concurrent.{Executors, TimeUnit}
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.{Executors, TimeUnit}
 import scala.collection.mutable.{Map => MMap}
 
 object ArtTimer_Ext {
@@ -21,7 +21,7 @@ object ArtTimer_Ext {
     scheduledCallbacks.get(id) match {
       case Some(b) =>
         val userRequested = b.get()
-        b.set(false)
+        b.set(F)
         scheduledCallbacks.remove(id)
         if (userRequested) {
           ArtNative.logInfo(Art.logTitle, s"Callback cleared for $id")
@@ -38,10 +38,10 @@ object ArtTimer_Ext {
     if (scheduledCallbacks.get(id).nonEmpty) {
       if (!replaceExisting) {
         ArtNative.logInfo(Art.logTitle, s"Callback already scheduled for $id")
+        return
       } else {
         cancel(id)
       }
-      return
     }
 
     if (delay < s64"0") {
@@ -49,7 +49,7 @@ object ArtTimer_Ext {
       return
     }
 
-    val shouldInvokeCallback = new AtomicBoolean(true)
+    val shouldInvokeCallback = new AtomicBoolean(T)
 
     val task = new Runnable {
       override def run(): Unit = {

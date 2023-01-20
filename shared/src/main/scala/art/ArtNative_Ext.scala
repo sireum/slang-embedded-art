@@ -3,11 +3,12 @@ package art
 import org.sireum._
 import art.DispatchPropertyProtocol.{Periodic, Sporadic}
 import art.scheduling.Scheduler
+import art.Art.PortId._
 import org.sireum.S64._
 import scala.collection.mutable.{Map => MMap}
 
 object ArtMessage {
-  val UNSET_PORT: Art.PortId = -1
+  val UNSET_PORT: Art.PortId = portId"-1"
   val UNSET_TIME: Art.Time = s64"-1"
 }
 
@@ -50,14 +51,14 @@ object ArtNative_Ext {
   //    We should study the Arch description to assess (more systematically)
   //    what types of helpers are needed and where they would go.
   /*
-  var activeBridges: ISZ[Art.BridgeId] = ISZ()
+  var activeBridges: IS[Art.BridgeId, Art.BridgeId] = ISZ()
   def setUpArchitecture() : Unit = {
     for(e <- Art.bridges.elements if(e.nonEmpty)) {
       activeBridges = activeBridges :+ e.get.id
     }
   }
   def tearDownArchitecture() : Unit = {
-    activeBridges = ISZ()
+    activeBridges = IS[Art.BridgeId, Art.BridgeId]()
   }
   */
 
@@ -120,7 +121,7 @@ object ArtNative_Ext {
 
   // JH: Refactored -- renamed port data structures
   // TODO -- Consider whether changing the value from ArtMessage to Art.DataContent should happen here (instead of in getValue)
-  def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
+  def receiveInput(eventPortIds: IS[Art.PortId, Art.PortId], dataPortIds: IS[Art.PortId, Art.PortId]): Unit = {
     for (portId <- eventPortIds) {
       inInfrastructurePorts.get(portId) match {
         case scala.Some(data) =>
@@ -162,7 +163,7 @@ object ArtNative_Ext {
   // ToDo: Introduce the concept of a distinct transfer method.
   //  The way that implementation treats outPortVariables and outInfrastructurePorts is almost nonsensical
   //  until that refactoring is made.
-  def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
+  def sendOutput(eventPortIds: IS[Art.PortId, Art.PortId], dataPortIds: IS[Art.PortId, Art.PortId]): Unit = { // SEND_OUTPUT
     for (srcPortId <- eventPortIds ++ dataPortIds) {
       outPortVariables.get(srcPortId) match {
         case scala.Some(msg) =>
@@ -254,11 +255,11 @@ object ArtNative_Ext {
       case Periodic(_) => TimeTriggered()
       case Sporadic(_) =>
         // get ids for non-empty input event ports
-        val portIds = ISZ[Art.PortId](Art.bridges(bridgeId).get.ports.eventIns.elements.map(_.id).filter(inInfrastructurePorts.get(_).nonEmpty): _*)
-        val urgentFifo = ops.ISZOps(portIds.map(Art.port(_))).sortWith { // reverse sort
+        val portIds = IS[Art.PortId, Art.PortId](Art.bridges(bridgeId).get.ports.eventIns.elements.map(_.id).filter(inInfrastructurePorts.get(_).nonEmpty): _*)
+        val urgentFifo: Seq[Art.PortId] = portIds.map((pid: Art.PortId) => Art.port(pid)).elements.sortWith { // reverse sort
           // sorting function to make prioritized sequence of event port ids
           //   compare p1 to p2  (p1 represents the port to process earlier, i.e., should have priority)
-          case (p1: UrgentPort[_], p2: UrgentPort[_]) =>
+          case (p1: UrgentPort[_], p2: UrgentPort[_]) =>Z
             // if p1 has a strictly less urgency it comes after p2
             if (p1.urgency < p2.urgency) F
             // if p1 has a strictly greater urgency, it comes before p2
@@ -270,7 +271,7 @@ object ArtNative_Ext {
           case (p1: Port[_], p2: Port[_]) =>
             inInfrastructurePorts(p1.id).dstArrivalTimestamp < inInfrastructurePorts(p2.id).dstArrivalTimestamp
         }.map(_.id)
-        EventTriggered(urgentFifo)
+        EventTriggered(IS[Art.PortId, Art.PortId](urgentFifo: _*))
     }
     return ret
   }
@@ -410,7 +411,7 @@ object ArtNative_Ext {
    * @param eventPortIds the event ports to be "copied and cleared" (but currently nothing happens)
    * @param dataPortIds the data ports to be "copied and cleared" (but currently nothing happens)
    */
-  def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // testing SEND_OUTPUT
+  def releaseOutput(eventPortIds: IS[Art.PortId, Art.PortId], dataPortIds: IS[Art.PortId, Art.PortId]): Unit = { // testing SEND_OUTPUT
     // note: sendOutput is usually accessed via:
     //   Art.sendOutput -> ArtNative.sendOutput -> ArtNative_Ext.sendOutput
     //JH added:

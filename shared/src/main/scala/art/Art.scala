@@ -13,22 +13,6 @@ object Art {
 
   @range(min = 0, index = T) class ConnectionId
 
-  @pure def zToPortId(z: Z): PortId = {
-    Contract(Requires(0 <= z))
-    return PortId(z.string).get
-  }
-
-  // FIXME
-  @strictpure def portIdToZ(portId: PortId): Z = Z(portId.string).get
-
-  @pure def zToBridgeId(z: Z): BridgeId = {
-    Contract(Requires(0 <= z))
-    return BridgeId(z.string).get
-  }
-
-  // FIXME
-  @strictpure def bridgeIdtoZ(bridgeId: BridgeId): Z = Z(bridgeId.string).get
-
   type Time = S64 // Z might be too small after transpiling
 
   val maxComponents: Z = conversions.Z16.toZ(Z16.Max) // constant set during instantiation, must be < Z32.Max

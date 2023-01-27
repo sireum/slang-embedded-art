@@ -109,6 +109,12 @@ object ArtNativeSlang {
   }
 
   def receiveInput(eventPortIds: IS[Art.PortId, Art.PortId], dataPortIds: IS[Art.PortId, Art.PortId]): Unit = {
+    // remove any old events from previous dispatch
+    for (portId <- eventPortIds if inPortVariables.contains(portId)) {
+      inPortVariables = inPortVariables - ((portId, inPortVariables.get(portId).get))
+    }
+
+    // transfer received data/events from the infrastructure ports to the port variables
     for(portId <- eventPortIds) {
       inInfrastructurePorts.get(portId) match {
         case Some(data) =>

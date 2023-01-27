@@ -122,6 +122,12 @@ object ArtNative_Ext {
   // JH: Refactored -- renamed port data structures
   // TODO -- Consider whether changing the value from ArtMessage to Art.DataContent should happen here (instead of in getValue)
   def receiveInput(eventPortIds: IS[Art.PortId, Art.PortId], dataPortIds: IS[Art.PortId, Art.PortId]): Unit = {
+    // remove any old events from previous dispatch
+    for (portId <- eventPortIds if inPortVariables.contains(portId)) {
+      inPortVariables -= portId
+    }
+
+    // transfer received data/events from the infrastructure ports to the port variables
     for (portId <- eventPortIds) {
       inInfrastructurePorts.get(portId) match {
         case scala.Some(data) =>

@@ -8,14 +8,13 @@ import org.sireum.S64._
 import scala.collection.mutable.{Map => MMap}
 
 object ArtMessage {
-  val UNSET_PORT: Art.PortId = portId"-1"
   val UNSET_TIME: Art.Time = s64"-1"
 }
 
 case class ArtMessage (data: DataContent,
 
-                       var srcPortId: Art.PortId = ArtMessage.UNSET_PORT,
-                       var dstPortId: Art.PortId = ArtMessage.UNSET_PORT,
+                       var srcPortId: Option[Art.PortId] = None(),
+                       var dstPortId: Option[Art.PortId] = None(),
 
                        // when putValue was called by producer
                        var putValueTimestamp: Art.Time = ArtMessage.UNSET_TIME,
@@ -148,7 +147,7 @@ object ArtNative_Ext {
 
   def putValue(portId: Art.PortId, data: DataContent): Unit = {
     // wrap the Art.DataContent value into an ArtMessage with time stamps
-    outPortVariables(portId) = ArtMessage(data = data, srcPortId = portId, putValueTimestamp = Art.time())
+    outPortVariables(portId) = ArtMessage(data = data, srcPortId = Some(portId), putValueTimestamp = Art.time())
   }
 
   def getValue(portId: Art.PortId): Option[DataContent] = {
@@ -180,7 +179,7 @@ object ArtNative_Ext {
           // simulate sending msg via transport middleware
           for(dstPortId <- Art.connections(srcPortId).elements) {
 
-            val _msg = msg.copy(dstPortId = dstPortId, sendOutputTimestamp = Art.time())
+            val _msg = msg.copy(dstPortId = Some(dstPortId), sendOutputTimestamp = Art.time())
 
             Art.port(dstPortId).mode match {
               // right now, there is no difference in the logic between data and event ports,
@@ -450,7 +449,7 @@ object ArtNative_Ext {
    */
   def insertInPortValue(dstPortId: Art.PortId, data: DataContent): Unit = {
     // note: that could would be changed when we refactor to support event queues of size > 1
-    val artMessage = ArtMessage(data = data, dstPortId = dstPortId, dstArrivalTimestamp = Art.time())
+    val artMessage = ArtMessage(data = data, dstPortId = Some(dstPortId), dstArrivalTimestamp = Art.time())
     // note: right now, there is no difference in the logic between data and event ports, but keep the
     // logic separate for future refactoring
     Art.port(dstPortId).mode match {

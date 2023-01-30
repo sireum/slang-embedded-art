@@ -7,6 +7,16 @@ import art.Art
 import art.Art.PortId._
 
 @datatype class ISPOps[T] (val s: IS[Art.PortId, T]) {
+
+  @pure def contains(e: T): B = {
+    for (v <- s) {
+      if (v == e) {
+        return T
+      }
+    }
+    return F
+  }
+
   def tail: IS[Art.PortId, T] = {
     if (s.isEmpty) {
       return s

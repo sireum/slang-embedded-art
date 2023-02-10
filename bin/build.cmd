@@ -108,22 +108,6 @@ def cloneRuntime(): Unit ={
   Os.proc(ISZ[String]("git", "clone", "--depth=1", "https://github.com/sireum/runtime")).at(home).console.runCheck()
 }
 
-def installToolsViaKekinian(): Unit = {
-  val builtIn = home / "runtime" / "library" / "shared" / "src" / "main" / "scala" / "org" / "sireum" / "BuiltInTypes.slang"
-  if(!builtIn.exists) {
-    builtIn.write(".")
-  }
-  val kbuild = homeBin / "kbuild.cmd"
-  kbuild.downloadFrom("https://raw.githubusercontent.com/sireum/kekinian/master/bin/build.cmd")
-  proc"$sireum slang run $kbuild --help".at(homeBin).runCheck()
-  kbuild.remove()
-  if(builtIn.size == 1) {
-    (home / "runtime").removeAll()
-  }
-}
-
-installToolsViaKekinian()
-
 for (i <- 0 until Os.cliArgs.size) {
   Os.cliArgs(i) match {
     case string"compile" =>

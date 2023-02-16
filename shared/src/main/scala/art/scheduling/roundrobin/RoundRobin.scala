@@ -25,13 +25,13 @@ import art.{Art, ArtNative, DispatchPropertyProtocol}
   def shouldDispatch(bridge: art.Bridge): B = {
     bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
-        if(Art.time() - lastDispatch(bridge.id) > conversions.Z.toS64(period)) {
-          return ArtNative.shouldDispatch(bridge.id)  // will always return true
+        if (Art.time() - lastDispatch(bridge.id) > conversions.Z.toS64(period)) {
+          return ArtNative.shouldDispatch(bridge.id) // will always return true
         } else {
           return F
         }
       case DispatchPropertyProtocol.Sporadic(minRate) =>
-        if(Art.time() - lastSporadic(bridge.id) < conversions.Z.toS64(minRate)) {
+        if (Art.time() - lastSporadic(bridge.id) < conversions.Z.toS64(minRate)) {
           return F
         } else {
           // check if there are events waiting in incoming infrastructure port
@@ -41,13 +41,13 @@ import art.{Art, ArtNative, DispatchPropertyProtocol}
   }
 
   override def computePhase(): Unit = {
-    while(!RoundRobinExtensions.shouldStop()) {
+    while (!RoundRobinExtensions.shouldStop()) {
       for (bridge <- bridges) {
-        if(shouldDispatch(bridge)) {
+        if (shouldDispatch(bridge)) {
           lastDispatch(bridge.id) = Art.time()
           bridge.entryPoints.compute()
 
-          if(bridge.dispatchProtocol.isInstanceOf[DispatchPropertyProtocol.Sporadic]) {
+          if (bridge.dispatchProtocol.isInstanceOf[DispatchPropertyProtocol.Sporadic]) {
             lastSporadic(bridge.id) = Art.time()
           }
         }
@@ -65,5 +65,6 @@ import art.{Art, ArtNative, DispatchPropertyProtocol}
 
 @ext object RoundRobinExtensions {
   def init(): Unit = $
+
   def shouldStop(): B = $
 }

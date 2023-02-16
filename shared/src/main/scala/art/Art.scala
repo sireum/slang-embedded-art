@@ -15,19 +15,21 @@ object Art {
 
   type Time = S64 // Z might be too small after transpiling
 
-  val maxComponents: Z = conversions.Z16.toZ(Z16.Max) // constant set during instantiation, must be < Z32.Max
-  val maxPorts: Z = conversions.Z16.toZ(Z16.Max) // constant set during instantiation, must be < Z32.Max
+  val numComponents: Z = conversions.Z16.toZ(Z16.Max)
+  val numPorts: Z = conversions.Z16.toZ(Z16.Max)
+  val numConnections: Z = conversions.Z16.toZ(Z16.Max)
 
   val logTitle: String = "Art"
-  val bridges: MS[BridgeId, Option[Bridge]] = MS.create[BridgeId, Option[Bridge]](maxComponents, None[Bridge]())
-  val connections: MS[PortId, IS[PortId, PortId]] = MS.create[PortId, IS[PortId, PortId]](maxPorts, IS())
-  val ports: MS[PortId, Option[UPort]] = MS.create[PortId, Option[UPort]](maxPorts, None[UPort]())
+  val bridges: MS[Art.BridgeId, Option[Bridge]] = MS.create[Art.BridgeId, Option[Bridge]](numComponents, None[Bridge]())
+  val ports: MS[Art.PortId, Option[UPort]] = MS.create[Art.PortId, Option[UPort]](numPorts, None[UPort]())
+  val connections: MS[Art.PortId, IS[Art.ConnectionId, Art.PortId]] = MS.create[Art.PortId, IS[Art.ConnectionId, Art.PortId]](numConnections, IS())
 
-  @pure def bridge(bridgeId: BridgeId): Bridge = {
+
+  @pure def bridge(bridgeId: Art.BridgeId): Bridge = {
     return bridges(bridgeId).get
   }
 
-  @pure def port(p: PortId) : UPort = {
+  @pure def port(p: Art.PortId): UPort = {
     return ports(p).get
   }
 
@@ -39,15 +41,23 @@ object Art {
       case DispatchPropertyProtocol.Sporadic(min) =>
         ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (sporadic: $min)")
     }
-    for (port <- bridge.ports.all) {
-      ports(port.id) = Some(port)
-      port.mode match {
-        case PortMode.DataIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data in)")
-        case PortMode.DataOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data out)")
-        case PortMode.EventIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (event in)")
-        case PortMode.EventOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (event out)")
+
+    def r(uports: ISZ[UPort]): Unit = {
+      for (port <- uports) {
+        ports(port.id) = Some(port)
+        port.mode match {
+          case PortMode.DataIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data in)")
+          case PortMode.DataOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data out)")
+          case PortMode.EventIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (event in)")
+          case PortMode.EventOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (event out)")
+        }
       }
     }
+
+    r(bridge.ports.dataIns)
+    r(bridge.ports.dataOuts)
+    r(bridge.ports.eventIns)
+    r(bridge.ports.eventOuts)
   }
 
   // can't find definition in the standard ??
@@ -55,7 +65,7 @@ object Art {
     return ArtNative.dispatchStatus(bridgeId)
   }
 
-  def receiveInput(eventPortIds: IS[PortId, PortId], dataPortIds: IS[PortId, PortId]): Unit = { // RECEIVE_INPUT
+  def receiveInput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // RECEIVE_INPUT
     ArtNative.receiveInput(eventPortIds, dataPortIds)
   }
 
@@ -67,7 +77,7 @@ object Art {
     return ArtNative.getValue(portId)
   }
 
-  def sendOutput(eventPortIds: IS[PortId, PortId], dataPortIds: IS[PortId, PortId]): Unit = { // SEND_OUTPUT
+  def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = { // SEND_OUTPUT
     ArtNative.sendOutput(eventPortIds, dataPortIds)
   }
 
@@ -76,7 +86,7 @@ object Art {
     * here as that adds an Option to the stack which increases the stack size.
     */
   def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = {
-    if(bridges(bridgeId).nonEmpty) {
+    if (bridges(bridgeId).nonEmpty) {
       ArtNative.logInfo(bridges(bridgeId).get.name, msg)
     } else {
       ArtNative.logInfo("", msg)
@@ -84,7 +94,7 @@ object Art {
   }
 
   def logError(bridgeId: Art.BridgeId, msg: String): Unit = {
-    if(bridges(bridgeId).nonEmpty) {
+    if (bridges(bridgeId).nonEmpty) {
       ArtNative.logError(bridges(bridgeId).get.name, msg)
     } else {
       ArtNative.logError("", msg)
@@ -92,7 +102,7 @@ object Art {
   }
 
   def logDebug(bridgeId: Art.BridgeId, msg: String): Unit = {
-    if(bridges(bridgeId).nonEmpty) {
+    if (bridges(bridgeId).nonEmpty) {
       ArtNative.logDebug(bridges(bridgeId).get.name, msg)
     } else {
       ArtNative.logDebug("", msg)
@@ -150,9 +160,11 @@ object Art {
   }
 
   def setUpArchitecture(): Unit = {}
+
   def tearDownArchitecture(): Unit = {}
 
   def setUpPlatform(): Unit = {}
+
   def tearDownPlatform(): Unit = {}
 
   def setUpSystemState(scheduler: Scheduler): Unit = {
@@ -195,22 +207,8 @@ object Art {
     ArtNative.initTest(bridge)
   }
 
- /**
- * Executes a component (identified by bridge) Initialize Entry Point (application code)
- * for the purposes of unit testing.
- *
- * This infrastructure method is called with automatically generated unit testing support code.
- * The developer-facing version of this method (called by a developer unit test)
- * provided by the unit testing support code hides the bridge argument.  The bridge
- * value is retrieved from the testing infrastructure code before passing the call
- * through to this method.
- */
-  def testInitialise(bridge: Bridge): Unit = {
-    ArtNative.testInitialise(bridge)
-  }
-
- /**
-  * Executes a component (identified by bridge) Compute Entry Point (application code)
+  /**
+  * Executes a component (identified by bridge) Initialize Entry Point (application code)
   * for the purposes of unit testing.
   *
   * This infrastructure method is called with automatically generated unit testing support code.
@@ -219,6 +217,20 @@ object Art {
   * value is retrieved from the testing infrastructure code before passing the call
   * through to this method.
   */
+  def testInitialise(bridge: Bridge): Unit = {
+    ArtNative.testInitialise(bridge)
+  }
+
+  /**
+   * Executes a component (identified by bridge) Compute Entry Point (application code)
+   * for the purposes of unit testing.
+   *
+   * This infrastructure method is called with automatically generated unit testing support code.
+   * The developer-facing version of this method (called by a developer unit test)
+   * provided by the unit testing support code hides the bridge argument.  The bridge
+   * value is retrieved from the testing infrastructure code before passing the call
+   * through to this method.
+   */
   def testCompute(bridge: Bridge): Unit = {
     ArtNative.testCompute(bridge)
   }
@@ -259,7 +271,7 @@ object Art {
     ArtNative.finalizeSystemTest()
   }
 
-  def releaseOutput(eventPortIds: IS[PortId, PortId], dataPortIds: IS[PortId, PortId]): Unit = {
+  def releaseOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
     ArtNative.releaseOutput(eventPortIds, dataPortIds)
   }
 

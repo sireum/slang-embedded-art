@@ -118,9 +118,9 @@ object Schedule {
 
   // aggregate invariant on static schedule
   def validDScheduleSpec(dScheduleSpec: DScheduleSpec): B = {
-    checkMaxDomain(dScheduleSpec)
-    checkNoMissingDomain(dScheduleSpec)
-    checkHyperPeriodTicks(dScheduleSpec)
+    return checkMaxDomain(dScheduleSpec) &&
+      checkNoMissingDomain(dScheduleSpec) &&
+      checkHyperPeriodTicks(dScheduleSpec)
   }
 
   // Invariant: no domain id referenced in a slot exceeds the specified max domain

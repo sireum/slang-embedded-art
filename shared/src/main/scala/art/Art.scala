@@ -272,15 +272,15 @@ object Art {
   }
 
   def observeOutPortValue(portId: Art.PortId): Option[DataContent] = {
-    ArtNative.observeOutPortValue(portId)
+    return ArtNative.observeOutPortValue(portId)
   }
 
   // JH: Refactored - manually added method to support
   def observeInPortValue(portId: Art.PortId): Option[DataContent] = {
-    ArtNative.observeInPortValue(portId)
+    return ArtNative.observeInPortValue(portId)
   }
 
   def observeOutPortVariable(portId: Art.PortId): Option[DataContent] = {
-    ArtNative.observeOutPortVariable(portId)
+    return ArtNative.observeOutPortVariable(portId)
   }
 }

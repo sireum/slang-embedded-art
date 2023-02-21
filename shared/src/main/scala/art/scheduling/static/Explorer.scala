@@ -59,7 +59,7 @@ object Explorer {
 
   // helper method to define initial state value
   def initialScheduleState(): ScheduleState = {
-    ScheduleState(0,0)
+    return ScheduleState(0,0)
   }
 
   // method to initialize schedule state

@@ -45,12 +45,16 @@ object Art {
     def r(uports: ISZ[UPort]): Unit = {
       for (port <- uports) {
         ports(port.id) = Some(port)
+        /* transpiler does not emit an extractor for matches in nested functions
         port.mode match {
           case PortMode.DataIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data in)")
           case PortMode.DataOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (data out)")
           case PortMode.EventIn => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (event in)")
           case PortMode.EventOut => ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} (event out)")
         }
+        */
+        val typ: String = if (port.mode == PortMode.DataIn) "(data in)" else if (port.mode == PortMode.DataOut) "(data out)" else if (port.mode == PortMode.EventOut) "(event out)" else if (port.mode == PortMode.EventIn) "(event in)" else "(infeasible)"
+        ArtNative.logInfo(logTitle, s"- Registered port: ${port.name} $typ")
       }
     }
 

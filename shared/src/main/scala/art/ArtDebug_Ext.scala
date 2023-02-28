@@ -36,7 +36,7 @@ object ArtDebug_Ext {
 
   def injectPort(bridgeId: Art.BridgeId, port: Art.PortId, data: DataContent): Unit = {
 
-    val bridge = Art.bridges(bridgeId).get
+    val bridge = Art.bridges(bridgeId.toZ).get
 
     if (bridge.ports.dataOuts.elements.map(_.id).contains(port) ||
       bridge.ports.eventOuts.elements.map(_.id).contains(port)) {

@@ -211,13 +211,13 @@ object ArtNative_Ext {
     // val b = Art.bridge(bridgeId) -- refactor
     // ToDo: the computation of input/output port ids should be helper functions in Bridge
     // compute inPortIds
-    val inPortIds = Art.bridges(bridgeId).get.ports.eventIns.elements.map(_.id) ++ Art.bridges(bridgeId).get.ports.dataIns.elements.map(_.id)
+    val inPortIds = Art.bridges(bridgeId.toZ).get.ports.eventIns.elements.map(_.id) ++ Art.bridges(bridgeId.toZ).get.ports.dataIns.elements.map(_.id)
     // iterate through inPortIds and clear the value of each corresponding port variable
     for (portId <- inPortIds) {
       inPortVariables -= portId.toZ;
     }
     // compute outPortIds
-    val outPortIds = Art.bridges(bridgeId).get.ports.eventOuts.elements.map(_.id) ++ Art.bridges(bridgeId).get.ports.dataOuts.elements.map(_.id)
+    val outPortIds = Art.bridges(bridgeId.toZ).get.ports.eventOuts.elements.map(_.id) ++ Art.bridges(bridgeId.toZ).get.ports.dataOuts.elements.map(_.id)
     // iterate through outPortIds and clear the value of each corresponding port variable
     for (portId <- outPortIds) {
       outPortVariables -= portId.toZ
@@ -242,12 +242,12 @@ object ArtNative_Ext {
 
   // JH: Refactor to match logic in semantics, group with dispatch status
   def shouldDispatch(bridgeId: Art.BridgeId): B = {
-    assert(Art.bridges(bridgeId).nonEmpty, s"Bridge ${bridgeId} does not exist")
+    assert(Art.bridges(bridgeId.toZ).nonEmpty, s"Bridge ${bridgeId} does not exist")
 
-    Art.bridges(bridgeId).get.dispatchProtocol match {
+    Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(_) => return T
       case DispatchPropertyProtocol.Sporadic(minRate) =>
-        return Art.bridges(bridgeId).get.ports.eventIns.elements.exists(
+        return Art.bridges(bridgeId.toZ).get.ports.eventIns.elements.exists(
           port => inInfrastructurePorts.contains(port.id.toZ))
     }
   }
@@ -255,11 +255,11 @@ object ArtNative_Ext {
   // JH: Refactored -- renamed port data structures
   //     ToDo: add comments justifying various sections of the logic by reference to standard clauses
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
-    val ret: DispatchStatus = Art.bridges(bridgeId).get.dispatchProtocol match {
+    val ret: DispatchStatus = Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
       case Periodic(_) => TimeTriggered()
       case Sporadic(_) =>
         // get ids for non-empty input event ports
-        val portIds = ISZ[Art.PortId](Art.bridges(bridgeId).get.ports.eventIns.map((u: UPort) => u.id).elements.filter((i: Art.PortId) => inInfrastructurePorts.get(i.toZ).nonEmpty): _*)
+        val portIds = ISZ[Art.PortId](Art.bridges(bridgeId.toZ).get.ports.eventIns.map((u: UPort) => u.id).elements.filter((i: Art.PortId) => inInfrastructurePorts.get(i.toZ).nonEmpty): _*)
         val urgentFifo: Seq[Art.PortId] = portIds.map((pid: Art.PortId) => Art.port(pid)).elements.sortWith { // reverse sort
           // sorting function to make prioritized sequence of event port ids
           //   compare p1 to p2  (p1 represents the port to process earlier, i.e., should have priority)

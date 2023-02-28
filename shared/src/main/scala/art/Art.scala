@@ -20,13 +20,20 @@ object Art {
   val numConnections: Z = conversions.Z16.toZ(Z16.Max)
 
   val logTitle: String = "Art"
-  val bridges: MS[Art.BridgeId, Option[Bridge]] = MS.create[Art.BridgeId, Option[Bridge]](numComponents, None[Bridge]())
+
+  val bridges: MSZ[Option[Bridge]] = MS.create(numComponents, None[Bridge]())
   val ports: MS[Art.PortId, Option[UPort]] = MS.create[Art.PortId, Option[UPort]](numPorts, None[UPort]())
-  val connections: MS[Art.PortId, IS[Art.ConnectionId, Art.PortId]] = MS.create[Art.PortId, IS[Art.ConnectionId, Art.PortId]](numConnections, IS())
+  val connections: MS[Art.PortId, IS[Art.ConnectionId, Art.PortId]] = MS.create[Art.PortId, IS[Art.ConnectionId, Art.PortId]](numPorts, IS())
+
+  // Note on transpiling:
+  // ports and conenctions are not touched/transpiled when targeting seL4. Bridges
+  // are isolated when transpiling so BridgeId.Max could be 0, but changing Min/Max is
+  // not currently supported by the transpiler so instead bridges is defined as an MSZ
+  // so that that its size can be set to 1 and thus reduce stack space requirements
 
 
   @pure def bridge(bridgeId: Art.BridgeId): Bridge = {
-    return bridges(bridgeId).get
+    return bridges(bridgeId.toZ).get
   }
 
   @pure def port(p: Art.PortId): UPort = {
@@ -34,7 +41,7 @@ object Art {
   }
 
   def register(bridge: Bridge): Unit = {
-    bridges(bridge.id) = Some(bridge)
+    bridges(bridge.id.toZ) = Some(bridge)
     bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
         ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (periodic: $period)")
@@ -90,24 +97,24 @@ object Art {
     * here as that adds an Option to the stack which increases the stack size.
     */
   def logInfo(bridgeId: Art.BridgeId, msg: String): Unit = {
-    if (bridges(bridgeId).nonEmpty) {
-      ArtNative.logInfo(bridges(bridgeId).get.name, msg)
+    if (bridges(bridgeId.toZ).nonEmpty) {
+      ArtNative.logInfo(bridges(bridgeId.toZ).get.name, msg)
     } else {
       ArtNative.logInfo("", msg)
     }
   }
 
   def logError(bridgeId: Art.BridgeId, msg: String): Unit = {
-    if (bridges(bridgeId).nonEmpty) {
-      ArtNative.logError(bridges(bridgeId).get.name, msg)
+    if (bridges(bridgeId.toZ).nonEmpty) {
+      ArtNative.logError(bridges(bridgeId.toZ).get.name, msg)
     } else {
       ArtNative.logError("", msg)
     }
   }
 
   def logDebug(bridgeId: Art.BridgeId, msg: String): Unit = {
-    if (bridges(bridgeId).nonEmpty) {
-      ArtNative.logDebug(bridges(bridgeId).get.name, msg)
+    if (bridges(bridgeId.toZ).nonEmpty) {
+      ArtNative.logDebug(bridges(bridgeId.toZ).get.name, msg)
     } else {
       ArtNative.logDebug("", msg)
     }

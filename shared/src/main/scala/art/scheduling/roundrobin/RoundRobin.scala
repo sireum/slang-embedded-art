@@ -17,13 +17,13 @@ import org.sireum.S64._
 
   override def initializationPhase(): Unit = {
     for (bridgeId <- schedule) {
-      Art.bridges(bridgeId).get.entryPoints.initialise()
-      Art.logInfo(bridgeId, s"Initialized bridge: ${Art.bridges(bridgeId).get.name}")
+      Art.bridges(bridgeId.toZ).get.entryPoints.initialise()
+      Art.logInfo(bridgeId, s"Initialized bridge: ${Art.bridges(bridgeId.toZ).get.name}")
     }
   }
 
   def shouldDispatch(bridgeId: Art.BridgeId): B = {
-    Art.bridges(bridgeId).get.dispatchProtocol match {
+    Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
         if (Art.time() - lastDispatch(bridgeId) > conversions.Z.toS64(period)) {
           return ArtNative.shouldDispatch(bridgeId) // will always return true
@@ -45,9 +45,9 @@ import org.sireum.S64._
       for (bridgeId <- schedule) {
         if (shouldDispatch(bridgeId)) {
           lastDispatch(bridgeId) = Art.time()
-          Art.bridges(bridgeId).get.entryPoints.compute()
+          Art.bridges(bridgeId.toZ).get.entryPoints.compute()
 
-          if (Art.bridges(bridgeId).get.dispatchProtocol.isInstanceOf[DispatchPropertyProtocol.Sporadic]) {
+          if (Art.bridges(bridgeId.toZ).get.dispatchProtocol.isInstanceOf[DispatchPropertyProtocol.Sporadic]) {
             lastSporadic(bridgeId) = Art.time()
           }
         }
@@ -57,8 +57,8 @@ import org.sireum.S64._
 
   override def finalizePhase(): Unit = {
     for (bridgeId <- schedule) {
-      Art.bridges(bridgeId).get.entryPoints.finalise()
-      Art.logInfo(bridgeId, s"Finalized bridge: ${Art.bridges(bridgeId).get.name}")
+      Art.bridges(bridgeId.toZ).get.entryPoints.finalise()
+      Art.logInfo(bridgeId, s"Finalized bridge: ${Art.bridges(bridgeId.toZ).get.name}")
     }
   }
 }

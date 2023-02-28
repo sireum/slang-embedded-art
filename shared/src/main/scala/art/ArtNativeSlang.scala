@@ -36,13 +36,13 @@ object ArtNativeSlang {
   var outPortVariables: Map[Z, ArtSlangMessage] = Map.empty
 
   def shouldDispatch(bridgeId: Art.BridgeId): B = {
-    assert(Art.bridges(bridgeId).nonEmpty, s"Bridge ${bridgeId} does not exist")
+    assert(Art.bridges(bridgeId.toZ).nonEmpty, s"Bridge ${bridgeId} does not exist")
 
-    Art.bridges(bridgeId).get.dispatchProtocol match {
+    Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(_) => return T
       case DispatchPropertyProtocol.Sporadic(minRate) =>
 
-        val eventIns = Art.bridges(bridgeId).get.ports.eventIns
+        val eventIns = Art.bridges(bridgeId.toZ).get.ports.eventIns
 
         var hasEvents = F
         // transpiler workaround -- doesn't support .exists
@@ -101,12 +101,12 @@ object ArtNativeSlang {
   }
 
   def dispatchStatus(bridgeId: Art.BridgeId): DispatchStatus = {
-    val ret: DispatchStatus = Art.bridges(bridgeId).get.dispatchProtocol match {
+    val ret: DispatchStatus = Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
       case Periodic(_) => TimeTriggered()
       case Sporadic(_) =>
         // get ids for non-empty input event ports
         val uports: ISZ[UPort] =
-          for (p <- Art.bridges(bridgeId).get.ports.eventIns if inInfrastructurePorts.get(p.id.toZ).nonEmpty) yield p
+          for (p <- Art.bridges(bridgeId.toZ).get.ports.eventIns if inInfrastructurePorts.get(p.id.toZ).nonEmpty) yield p
 
         if (uports.isEmpty) {
           halt(s"Unexpected: shouldDispatch() should have returned true in order to get here, however the incoming event ports are empty for bridge id ${bridgeId}")

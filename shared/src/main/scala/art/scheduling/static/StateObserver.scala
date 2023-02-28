@@ -17,7 +17,7 @@ object StateObserver {
   }
 
   def observeInPortValues(bridgeId: Art.BridgeId): ISZ[(String, Option[DataContent])] = {
-    val bridge = Art.bridges(bridgeId).get
+    val bridge = Art.bridges(bridgeId.toZ).get
     var portValues: ISZ[(String, Option[DataContent])] = ISZ()
 
     for (port <- bridge.ports.dataIns) {
@@ -31,7 +31,7 @@ object StateObserver {
   }
 
   def observeOutPortValues(bridgeId: Art.BridgeId): ISZ[(String, Option[DataContent])] = {
-    val bridge = Art.bridges(bridgeId).get
+    val bridge = Art.bridges(bridgeId.toZ).get
     var portValues: ISZ[(String, Option[DataContent])] = ISZ()
 
     for (port <- bridge.ports.dataOuts) {

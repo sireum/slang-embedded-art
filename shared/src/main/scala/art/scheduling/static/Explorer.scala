@@ -91,7 +91,7 @@ object Explorer {
     // bridge.entryPoints.compute()  -- debug with Robby
     // Art.bridges(bridgeId).asInstanceOf[MSome[Bridge]].value.entryPoints.compute()
     if(ArtNative.shouldDispatch(bridgeId)) {
-      Art.bridges(bridgeId).get.entryPoints.compute()
+      Art.bridges(bridgeId.toZ).get.entryPoints.compute()
     }
   }
 

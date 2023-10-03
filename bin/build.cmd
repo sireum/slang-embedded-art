@@ -63,7 +63,7 @@ val mill = homeBin / "mill.bat"
 val sireum : Os.Path = homeBin / (if (Os.isWin) "sireum.bat" else "sireum")
 
 val proyekName: String = "sireum-proyek"
-val project: Os.Path = homeBin / "project4testing.cmd"
+val project: Os.Path = homeBin / "project-standalone.cmd"
 
 
 def tipe(): Unit = {

@@ -124,8 +124,7 @@ object StateObserver {
   }
 
   def generatePortContentsByNickName(threadNickName: String): String = {
-    halt("TODO")
-    //val bridgeId = art.StaticScheduling.threadNickNames.get(threadNickName).get // ToDo: fix error handling
-    //return generatePortContents(bridgeId)
+    val bridgeId = StaticScheduler.threadNickNames.get(threadNickName).get // ToDo: fix error handling
+    return generatePortContents(bridgeId)
   }
 }

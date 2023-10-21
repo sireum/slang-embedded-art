@@ -6,21 +6,20 @@ import art.Art.BridgeId
 
 object CommandInterpreter {
 
-  def makeHelpMessage(): String = {
-    return (
-      st"""s <n?>     - step n slots (default 0)
-          |h <n?>     - step n hyper-periods (default 0)
-          |rs <n>     - run to slot n (wrap to next hyper-period if needed)
-          |rs <h> <n> - run to state hyperperiod h and slot n (do nothing if past this state)
-          |rh <n>     - run to hyper-period n (do nothing if already past the beginning of hyper-period n)
-          |rt <name>  - run to slot containing thread with nickname <name>
-          |i st       - show current state
-          |i sc       - show schedule and current position
-          |i out      - show output port values of most recently run thread
-          |i in       - show input  port values of next thread to run
-          |i cp <nickname> - show port values of component with given nickname
-          |x          - exit
-          |""".render)
+  def printHelpMessage(): Unit = {
+    println("s <n?>     - step n slots (default 0)")
+    println("h <n?>     - step n hyper-periods (default 0)")
+    println("rs <n>     - run to slot n (wrap to next hyper-period if needed)")
+    println("rs <h> <n> - run to state hyperperiod h and slot n (do nothing if past this state)")
+    println("rh <n>     - run to hyper-period n (do nothing if already past the beginning of hyper-period n)")
+    println("rt <name>  - run to slot containing thread with nickname <name>")
+    println("i st       - show current state")
+    println("i sc       - show schedule and current position")
+    println("i out      - show output port values of most recently run thread")
+    println("i in       - show input  port values of next thread to run")
+    println("i cp <nickname> - show port values of component with given nickname")
+    println("x          - exit")
+    println()
   }
 
   def message(str: String): Unit = {
@@ -31,7 +30,7 @@ object CommandInterpreter {
     var done: B = false
     cmd match {
       case _: Help => {
-        message(makeHelpMessage())
+        printHelpMessage()
       }
       case Sstep(n) => {
         assert(n >= 1)
@@ -82,14 +81,14 @@ object CommandInterpreter {
         halt("todo Infoschedule")
 
       case _: InfoInputs =>
-        message(StateObserver.generatePortContentsInputsCurrent())
+        StateObserver.printPortContentsInputsCurrent()
       case _: InfoOutputs =>
-        message(StateObserver.generatePortContentsOutputsCurrent())
+        StateObserver.printPortContentsOutputsCurrent()
 
       case InfoComponentStateId(bridgId) =>
-        message(StateObserver.generatePortContents(BridgeId.fromZ(bridgId)))
+        StateObserver.printPortContents(BridgeId.fromZ(bridgId))
       case InfoComponentState(threadNickName) =>
-        message(StateObserver.generatePortContentsByNickName(threadNickName))
+        StateObserver.printPortContentsByNickName(threadNickName)
       case _: InfoThreadNickNames =>
         halt("todo InfoThreadNickNames")
       //showNickNames()

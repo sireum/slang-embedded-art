@@ -212,7 +212,7 @@ object Explorer {
 
     // TODO
     //halt("TODO")
-    println(s"TODO: Cli.message(s\"...Running to beginning of hyper-period# $hpNum\"")
+    println(s"TODO: Cli.message(s'...Running to beginning of hyper-period# $hpNum'")
     //Cli.message(s"...Running to beginning of hyper-period# $hpNum")
 
     while (scheduleState.hyperperiodNum < hpNum) {
@@ -220,7 +220,7 @@ object Explorer {
     }
 
     // TODO
-    println("TODO: Cli.message(\"*********** Run to ... Completed *************\")")
+    println("TODO: Cli.message('*********** Run to ... Completed *************')")
     //Cli.message("*********** Run to ... Completed *************")
 
     println("TODO: Cli.showState(scheduleState)")
@@ -236,7 +236,7 @@ object Explorer {
     // body
 
     // TODO
-    println(s"TODO: Cli.message(s\"...Running to state [hp = $hpNum, slot = $slotNum]\")")
+    println(s"TODO: Cli.message(s'...Running to state [hp = $hpNum, slot = $slotNum]')")
     //Cli.message(s"...Running to state [hp = $hpNum, slot = $slotNum]")
 
     while (scheduleState.hyperperiodNum < hpNum) {
@@ -247,7 +247,7 @@ object Explorer {
     }
 
     // TODO
-    println(s"TODO: Cli.message(\"*********** Run to ... Completed *************\")")
+    println(s"TODO: Cli.message('*********** Run to ... Completed *************')")
     //Cli.message("*********** Run to ... Completed *************")
 
     println(s"TODO: Cli.showState(scheduleState)")
@@ -265,7 +265,7 @@ object Explorer {
     }
 
     // TODO
-    println(s"Cli.message(\"*********** Run to ... Completed *************\")")
+    println(s"Cli.message('*********** Run to ... Completed *************')")
     //Cli.message("*********** Run to ... Completed *************")
 
     println(s"TODO: Cli.showState(scheduleState)")
@@ -279,14 +279,14 @@ object Explorer {
     assert(domainId >= 0 & domainId <= Schedule.dScheduleSpec.maxDomain)
     // body
     // TODO
-    println(s"TODO: Cli.message(s\"...Running to domain $domainId\")")
+    println(s"TODO: Cli.message(s'...Running to domain $domainId')")
     //Cli.message(s"...Running to domain $domainId")
 
     while (Schedule.dScheduleSpec.schedule.slots(scheduleState.slotNum).domain != domainId) {
       stepSystemOneSlotIMP(F)
     }
 
-    println(s"TODO: Cli.message(\"*********** Run to ... Completed *************\")")
+    println(s"TODO: Cli.message('*********** Run to ... Completed *************')")
     //Cli.message("*********** Run to ... Completed *************")
 
     println(s"TODO: Cli.showState(scheduleState)")
@@ -301,12 +301,12 @@ object Explorer {
     val bridgeId = StaticScheduler.threadNickNames.get(threadNickName).get // ToDo: fix error handling
     val domainId = StaticScheduler.bridgeIdToDomainMap(bridgeId)
 
-    println("TODO: Cli.message(s\"...Running to thread $threadNickName (domain $domainId)\")")
+    println("TODO: Cli.message(s'...Running to thread $threadNickName (domain $domainId)')")
     //Cli.message(s"...Running to thread $threadNickName (domain $domainId)")
     while (Schedule.dScheduleSpec.schedule.slots(scheduleState.slotNum).domain != domainId) {
       stepSystemOneSlotIMP(F)
     }
-    println(s"TODO: Cli.message(\"*********** Run to ... Completed *************\")")
+    println(s"TODO: Cli.message('*********** Run to ... Completed *************')")
     //Cli.message("*********** Run to ... Completed *************")
     println(s"TODO: Cli.showState(scheduleState)")
     //Cli.showState(scheduleState)
@@ -318,7 +318,7 @@ object Explorer {
     // pre-condition (invariants on scheduleState and dScheduleSpec)
     // assert valid schedule
     // body
-    println(s"TODO: Cli.message (s\"...Running system according to static schedule\")")
+    println(s"TODO: Cli.message (s'...Running system according to static schedule')")
     //Cli.message (s"...Running system according to static schedule")
 
     Explorer.initializeScheduleStateIMP()

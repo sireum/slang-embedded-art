@@ -5,7 +5,6 @@ import org.sireum._
 import art.Art
 import art.scheduling.Scheduler
 import art.scheduling.static.Schedule.DScheduleSpec
-import isolette.Arch
 
 object StaticScheduler {
   var threadNickNames: Map[String, Art.BridgeId] = Map.empty
@@ -21,6 +20,7 @@ object StaticScheduler {
 }
 
 @record class StaticScheduler(staticSchedule: DScheduleSpec,
+                              bridges: IS[Art.BridgeId, art.Bridge],
                               domainToBridgeIdMap: ISZ[Art.BridgeId],
                               threadNickNames: Map[String, Art.BridgeId],
                               commandProvider: CommandProvider) extends Scheduler {
@@ -36,8 +36,8 @@ object StaticScheduler {
 
   override def initializationPhase(): Unit = {
     for (bridgeId <- domainToBridgeIdMap) {
-      Arch.ad.components(bridgeId).entryPoints.initialise()
-      art.Art.logInfo(bridgeId, s"Initialized bridge: ${Arch.ad.components(bridgeId).name}")
+      bridges(bridgeId).entryPoints.initialise()
+      art.Art.logInfo(bridgeId, s"Initialized bridge: ${bridges(bridgeId).name}")
     }
   }
 
@@ -50,8 +50,8 @@ object StaticScheduler {
 
   override def finalizePhase(): Unit = {
     for (bridgeId <- domainToBridgeIdMap) {
-      Arch.ad.components(bridgeId).entryPoints.finalise()
-      art.Art.logInfo(bridgeId, s"Finalized bridge: ${Arch.ad.components(bridgeId).name}")
+      bridges(bridgeId).entryPoints.finalise()
+      art.Art.logInfo(bridgeId, s"Finalized bridge: ${bridges(bridgeId).name}")
     }
   }
 }

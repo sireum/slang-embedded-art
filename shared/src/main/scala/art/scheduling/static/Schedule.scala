@@ -99,14 +99,30 @@ object Schedule {
 
   // Invariant: no domain id referenced in a slot exceeds the specified max domain
   def checkMaxDomain(dScheduleSpec: DScheduleSpec): B = {
-    return All(dScheduleSpec.schedule.slots)(s => s.domain <= dScheduleSpec.maxDomain)
+    // Note: transpiler doesn't current support function passing
+    //return All(dScheduleSpec.schedule.slots)(s => s.domain <= dScheduleSpec.maxDomain)
+    for (s <- dScheduleSpec.schedule.slots if s.domain > dScheduleSpec.maxDomain) {
+      return F
+    }
+    return T
   }
 
   // Invariant: every domain 0 .. maxDomain is referenced by at least one slot
   def checkNoMissingDomain(dScheduleSpec: DScheduleSpec): B = {
-    return All(0 until dScheduleSpec.maxDomain)(d =>
-      Exists(dScheduleSpec.schedule.slots)(s => s.domain == d)
-    )
+    // NOTE: transpiler doesn't currently support function passing
+    //return All(0 until dScheduleSpec.maxDomain)(d =>
+    //  Exists(dScheduleSpec.schedule.slots)(s => s.domain == d)
+    //)
+    for (d <- 0 until dScheduleSpec.maxDomain) {
+      var exists: B = F
+      for (s <- dScheduleSpec.schedule.slots if !exists) {
+        exists = exists || s.domain == d
+      }
+      if (!exists) {
+        return F
+      }
+    }
+    return T
   }
 
   // Invariant: the total time (in ticks) across all slots matches the specified hyper-period

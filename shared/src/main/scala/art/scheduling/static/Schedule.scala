@@ -149,8 +149,6 @@ object Schedule {
    * @param dScheduleSpec static schedule
    */
   def checkPeriodTicks(domain: Z, period: Z, dScheduleSpec: DScheduleSpec): B = {
-    halt("TODO")
-    /*
     var computedPeriod: Z = 0 // computed period in ticks
     var computedTicksBeforeOccurrence: Z = 0
     // number of ticks before first occurrence
@@ -188,8 +186,6 @@ object Schedule {
     // computedTicksBeforeOccurrence should hold the time before it was seen.
     // The sum of these values should equal the period.
     return (computedPeriod + computedTicksBeforeOccurrence == period)
-
-     */
   }
 
   def computeElaspedRemainingHPTicks(slotNum: Z, dScheduleSpec: DScheduleSpec): (Z, Z) = {

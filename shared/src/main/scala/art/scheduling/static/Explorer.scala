@@ -159,9 +159,7 @@ object Explorer {
     advanceStateIMP()
     val postScheduleState = scheduleState
     if (info) {
-      // TODO
-      println("TODO: //Cli.showStep(preScheduleState, postScheduleState, dScheduleSpec)")
-      //Cli.showStep(preScheduleState, postScheduleState, dScheduleSpec)
+      CliInfoProvider.showStep(preScheduleState, postScheduleState, dScheduleSpec)
     }
   }
 
@@ -188,9 +186,7 @@ object Explorer {
     // assert that current state is at the beginning of a HP
     assert(isHyperPeriodBoundary(scheduleState))
 
-    // TODO
-    println("TODO: Cli.showHyperPeriodBoundary(scheduleState)")
-    //Cli.showHyperPeriodBoundary(scheduleState)
+    CliInfoProvider.showHyperPeriodBoundary(scheduleState)
   }
 
   // Steps the system N hyper-periods.
@@ -198,7 +194,6 @@ object Explorer {
   // called when the system is not on a hyper-period boundary (start of hyper-period)
   def stepSystemNHPIMP(numHyperPeriods: Z): Unit = {
     for (hpcount <- 1 to numHyperPeriods) {
-      // println("===== Hyperperiod ", scheduleState.hyperperiodNum, " ============")
       stepSystemOneHPIMP()
     }
   }
@@ -210,21 +205,15 @@ object Explorer {
     assert(hpNum >= 0)
     // body
 
-    // TODO
-    //halt("TODO")
-    println(s"TODO: Cli.message(s'...Running to beginning of hyper-period# $hpNum'")
-    //Cli.message(s"...Running to beginning of hyper-period# $hpNum")
+    CliInfoProvider.message(s"...Running to beginning of hyper-period# $hpNum")
 
     while (scheduleState.hyperperiodNum < hpNum) {
       stepSystemOneSlotIMP(F)
     }
 
-    // TODO
-    println("TODO: Cli.message('*********** Run to ... Completed *************')")
-    //Cli.message("*********** Run to ... Completed *************")
+    CliInfoProvider.message("*********** Run to ... Completed *************")
 
-    println("TODO: Cli.showState(scheduleState)")
-    //Cli.showState(scheduleState)
+    CliInfoProvider.showStateH(scheduleState)
   }
 
   // Runs the system to the start of the given state (hp# and slot#)
@@ -235,9 +224,7 @@ object Explorer {
     assert(slotNum >= 0 & slotNum < Schedule.dScheduleSpec.schedule.slots.size)
     // body
 
-    // TODO
-    println(s"TODO: Cli.message(s'...Running to state [hp = $hpNum, slot = $slotNum]')")
-    //Cli.message(s"...Running to state [hp = $hpNum, slot = $slotNum]")
+    CliInfoProvider.message(s"...Running to state [hp = $hpNum, slot = $slotNum]")
 
     while (scheduleState.hyperperiodNum < hpNum) {
       stepSystemOneSlotIMP(F)
@@ -246,12 +233,9 @@ object Explorer {
       stepSystemOneSlotIMP(F)
     }
 
-    // TODO
-    println(s"TODO: Cli.message('*********** Run to ... Completed *************')")
-    //Cli.message("*********** Run to ... Completed *************")
+    CliInfoProvider.message("*********** Run to ... Completed *************")
 
-    println(s"TODO: Cli.showState(scheduleState)")
-    //Cli.showState(scheduleState)
+    CliInfoProvider.showStateH(scheduleState)
   }
 
   // Runs the system to the start of the given slot#
@@ -264,12 +248,9 @@ object Explorer {
       stepSystemOneSlotIMP(F)
     }
 
-    // TODO
-    println(s"Cli.message('*********** Run to ... Completed *************')")
-    //Cli.message("*********** Run to ... Completed *************")
+    CliInfoProvider.message("*********** Run to ... Completed *************")
 
-    println(s"TODO: Cli.showState(scheduleState)")
-    //Cli.showState(scheduleState)
+    CliInfoProvider.showStateH(scheduleState)
   }
 
   // Runs the system to the start of the given domain
@@ -278,19 +259,15 @@ object Explorer {
     assert(validState(scheduleState, dScheduleSpec))
     assert(domainId >= 0 & domainId <= Schedule.dScheduleSpec.maxDomain)
     // body
-    // TODO
-    println(s"TODO: Cli.message(s'...Running to domain $domainId')")
-    //Cli.message(s"...Running to domain $domainId")
+    CliInfoProvider.message(s"...Running to domain $domainId")
 
     while (Schedule.dScheduleSpec.schedule.slots(scheduleState.slotNum).domain != domainId) {
       stepSystemOneSlotIMP(F)
     }
 
-    println(s"TODO: Cli.message('*********** Run to ... Completed *************')")
-    //Cli.message("*********** Run to ... Completed *************")
+    CliInfoProvider.message("*********** Run to ... Completed *************")
 
-    println(s"TODO: Cli.showState(scheduleState)")
-    //Cli.showState(scheduleState)
+    CliInfoProvider.showStateH(scheduleState)
   }
 
 
@@ -301,15 +278,13 @@ object Explorer {
     val bridgeId = StaticScheduler.threadNickNames.get(threadNickName).get // ToDo: fix error handling
     val domainId = StaticScheduler.bridgeIdToDomainMap(bridgeId)
 
-    println("TODO: Cli.message(s'...Running to thread $threadNickName (domain $domainId)')")
-    //Cli.message(s"...Running to thread $threadNickName (domain $domainId)")
+    CliInfoProvider.message(s"...Running to thread $threadNickName (domain $domainId)")
     while (Schedule.dScheduleSpec.schedule.slots(scheduleState.slotNum).domain != domainId) {
       stepSystemOneSlotIMP(F)
     }
-    println(s"TODO: Cli.message('*********** Run to ... Completed *************')")
-    //Cli.message("*********** Run to ... Completed *************")
-    println(s"TODO: Cli.showState(scheduleState)")
-    //Cli.showState(scheduleState)
+    CliInfoProvider.message("*********** Run to ... Completed *************")
+
+    CliInfoProvider.showStateH(scheduleState)
   }
 
 
@@ -318,8 +293,7 @@ object Explorer {
     // pre-condition (invariants on scheduleState and dScheduleSpec)
     // assert valid schedule
     // body
-    println(s"TODO: Cli.message (s'...Running system according to static schedule')")
-    //Cli.message (s"...Running system according to static schedule")
+    CliInfoProvider.message (s"...Running system according to static schedule")
 
     Explorer.initializeScheduleStateIMP()
     var systemStopCondition: B = false // right now we don't have a system stop condition

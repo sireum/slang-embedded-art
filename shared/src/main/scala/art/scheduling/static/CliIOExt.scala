@@ -10,8 +10,4 @@ object CliIOExt {
     val command = readLine()
     return command
   }
-
-  def displayOutput(s: String): Unit = {
-    println(s)
-  }
 }

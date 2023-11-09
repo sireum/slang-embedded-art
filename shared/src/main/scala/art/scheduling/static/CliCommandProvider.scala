@@ -36,6 +36,10 @@ import org.sireum._
       }
       return Hstep(numSteps)
     } else if (arg0 == "i") {
+      if (args.size < 2) {
+        println("i requires a second option")
+        return Help()
+      }
       // need to insert a check for size greater than 1
       if (args(1) == "st") {
         return Infostate()

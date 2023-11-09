@@ -8,6 +8,14 @@ import org.sireum._
   def nextCommand(): Command
 }
 
+@msig trait InfoCommandProvider extends CommandProvider {
+  def threadNickNames: Map[String, art.Art.BridgeId]
+  def numSlots: Z
+  def displayOrder: ISZ[art.Art.BridgeId]
+
+  def init(threadNickNames: Map[String, art.Art.BridgeId], numSlots: Z, displayOrder: ISZ[art.Art.BridgeId]): CommandProvider
+}
+
 @datatype trait Command
 
 @datatype class Unrecognized extends Command

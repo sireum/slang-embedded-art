@@ -24,6 +24,7 @@ object CliInfoProvider {
     println("i out      - show output port values of most recently run thread")
     println("i in       - show input  port values of next thread to run")
     println("i cp <nickname> - show port values of component with given nickname")
+    println("i nn       - show thread nicknames")
     println("x          - exit")
     println()
   }
@@ -72,7 +73,7 @@ object CliInfoProvider {
       if (slotNum == stateSlotNum) {
         val (elaspedHPTicks, remainingHPTicks) = Schedule.computeElaspedRemainingHPTicks(slotNum, dScheduleSpec)
         prefix = " *"
-        suffix = s"(elasped= $elaspedHPTicks, remaining=$remainingHPTicks)"
+        suffix = s"(elapsed= $elaspedHPTicks, remaining=$remainingHPTicks)"
       }
       message(s"${prefix}$slotNum [domain=${s.domain},length=${s.length}] $suffix")
       slotNum = slotNum + 1

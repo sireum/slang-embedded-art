@@ -5,6 +5,7 @@ before_install:
   - export SIREUM_HOME=.
   - unset JAVA_TOOL_OPTIONS
   - export SIREUM_NO_AOT=true
+  - rm -f lib/collections-*.jar lib/compiler-*.jar lib/jniutils-*.jar lib/nativeimage-*.jar lib/options-*.jar lib/truffle-compiler-*.jar lib/word-*.jar
 install:
-  - bin/build.cmd m2 || (cat bin/.aot/train.log 2>/dev/null; exit 1)
+  - bin/build.cmd m2
   - rm -fR lib/cache

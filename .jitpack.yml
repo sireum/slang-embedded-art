@@ -5,6 +5,8 @@ before_install:
   - export SIREUM_HOME=.
   - unset JAVA_TOOL_OPTIONS
   - export SIREUM_NO_AOT=true
+  - printf 'central.from=https://repo1.maven.org/maven2\ncentral.to=https://maven-central.storage-download.googleapis.com/maven2\n' > $HOME/coursier-mirror.properties
+  - export COURSIER_MIRRORS=$HOME/coursier-mirror.properties
 install:
   - rm -f lib/collections-*.jar lib/compiler-*.jar lib/jniutils-*.jar lib/nativeimage-*.jar lib/options-*.jar lib/truffle-compiler-*.jar lib/word-*.jar
   - bin/sireum slang run bin/build.cmd m2

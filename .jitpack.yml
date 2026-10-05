@@ -4,6 +4,7 @@ before_install:
   - bin/init.sh
   - export SIREUM_HOME=.
   - unset JAVA_TOOL_OPTIONS
+  - export SIREUM_NO_AOT=true
 install:
-  - bin/build.cmd m2
+  - bin/build.cmd m2 || (cat bin/.aot/train.log 2>/dev/null; exit 1)
   - rm -fR lib/cache

@@ -2,6 +2,8 @@ jdk:
   - oraclejdk8
 before_install:
   - bin/init.sh
+  - for i in 1 2 3; do bin/linux/java/bin/jar tf bin/sireum.jar 2>/dev/null | grep -qx org/sireum/Sireum.class && break; echo "bin/sireum.jar is invalid ($(wc -c < bin/sireum.jar) bytes), re-downloading"; rm -f bin/sireum.jar; bin/init.sh; done
+  - bin/linux/java/bin/jar tf bin/sireum.jar | grep -x org/sireum/Sireum.class
   - export SIREUM_HOME=.
   - unset JAVA_TOOL_OPTIONS
   - export SIREUM_NO_AOT=true

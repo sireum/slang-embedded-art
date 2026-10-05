@@ -162,31 +162,41 @@ object ArtNativeSlang {
   }
 
   def sendOutput(eventPortIds: ISZ[Art.PortId], dataPortIds: ISZ[Art.PortId]): Unit = {
-    for (srcPortId <- eventPortIds ++ dataPortIds) {
-      outPortVariables.get(srcPortId.toZ) match {
-        case Some(msg) => {
-
-          // move payload from out port port variables to the out infrastructure ports
-          outInfrastructurePorts = outInfrastructurePorts + (srcPortId.toZ ~> msg)
-          outPortVariables = outPortVariables - ((srcPortId.toZ, msg))
-
-          // simulate sending msg via transport middleware
-          for (dstPortId <- Art.connections(srcPortId)) {
-            val _msg = msg(dstPortId = Some(dstPortId), sendOutputTimestamp = Art.time())
-
-            // send via middleware
-
-            inInfrastructurePorts = inInfrastructurePorts + (dstPortId.toZ ~>
-              _msg(dstArrivalTimestamp = Art.time()))
-          }
-
-          // payload delivered so remove it from out infrastructure port
-          outInfrastructurePorts = outInfrastructurePorts - ((srcPortId.toZ, msg))
-        }
-        case _ =>
-      }
+    // event ports are sent before data ports. The two sequences are processed in separate
+    // loops rather than concatenated as codegen sizes IS[Z, Art.PortId] to the largest single
+    // port partition, which can be smaller than the number of event and data out ports combined
+    for (srcPortId <- eventPortIds) {
+      sendOutputPort(srcPortId)
+    }
+    for (srcPortId <- dataPortIds) {
+      sendOutputPort(srcPortId)
     }
     // could clear outPortVariables for passed in portids but not strictly necessary
+  }
+
+  def sendOutputPort(srcPortId: Art.PortId): Unit = {
+    outPortVariables.get(srcPortId.toZ) match {
+      case Some(msg) => {
+
+        // move payload from out port port variables to the out infrastructure ports
+        outInfrastructurePorts = outInfrastructurePorts + (srcPortId.toZ ~> msg)
+        outPortVariables = outPortVariables - ((srcPortId.toZ, msg))
+
+        // simulate sending msg via transport middleware
+        for (dstPortId <- Art.connections(srcPortId)) {
+          val _msg = msg(dstPortId = Some(dstPortId), sendOutputTimestamp = Art.time())
+
+          // send via middleware
+
+          inInfrastructurePorts = inInfrastructurePorts + (dstPortId.toZ ~>
+            _msg(dstArrivalTimestamp = Art.time()))
+        }
+
+        // payload delivered so remove it from out infrastructure port
+        outInfrastructurePorts = outInfrastructurePorts - ((srcPortId.toZ, msg))
+      }
+      case _ =>
+    }
   }
 
   /**

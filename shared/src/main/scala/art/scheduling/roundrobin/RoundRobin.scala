@@ -13,6 +13,22 @@ import org.sireum.S64._
 
   override def initialize(): Unit = {
     RoundRobinExtensions.init()
+    backdateLastDispatches()
+  }
+
+  // Art.time() starts near 0, so backdate the last dispatches so that every bridge is
+  // eligible for dispatch in the first round, as it was when Art.time() was wall-clock time
+  def backdateLastDispatches(): Unit = {
+    val now = Art.time()
+    for (bridgeId <- schedule) {
+      Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
+        case DispatchPropertyProtocol.Periodic(period) =>
+          lastDispatch(bridgeId) = now - period - s64"1"
+        case DispatchPropertyProtocol.Sporadic(min) =>
+          lastDispatch(bridgeId) = now - min
+          lastSporadic(bridgeId) = now - min
+      }
+    }
   }
 
   override def initializationPhase(): Unit = {
@@ -25,13 +41,13 @@ import org.sireum.S64._
   def shouldDispatch(bridgeId: Art.BridgeId): B = {
     Art.bridges(bridgeId.toZ).get.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
-        if (Art.time() - lastDispatch(bridgeId) > conversions.Z.toS64(period)) {
+        if (Art.time() - lastDispatch(bridgeId) > period) {
           return ArtNative.shouldDispatch(bridgeId) // will always return true
         } else {
           return F
         }
       case DispatchPropertyProtocol.Sporadic(minRate) =>
-        if (Art.time() - lastSporadic(bridgeId) < conversions.Z.toS64(minRate)) {
+        if (Art.time() - lastSporadic(bridgeId) < minRate) {
           return F
         } else {
           // check if there are events waiting in incoming infrastructure port

@@ -10,10 +10,11 @@ import org.sireum._
 
 @ext object ArtTimer {
 
-  def schedule(id: String, replaceExisting: B, delay: Art.Time, callback: () => Unit): Unit = $
+  // delayNs is in nanoseconds; use ArtTime.millis/micros to convert, e.g. ArtTime.millis(500)
+  def schedule(id: String, replaceExisting: B, delayNs: Art.Time, callback: () => Unit): Unit = $
 
   // if transpiling then use this version as transpiler does not support function passing
-  def scheduleTrait(id: String, replaceExisting: B, delay: Art.Time, callback: TimerCallback): Unit = $
+  def scheduleTrait(id: String, replaceExisting: B, delayNs: Art.Time, callback: TimerCallback): Unit = $
 
   def cancel(id: String): Unit = $
 }

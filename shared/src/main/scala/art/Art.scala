@@ -13,7 +13,9 @@ object Art {
 
   @range(min = 0, index = T) class ConnectionId
 
-  type Time = S64 // Z might be too small after transpiling
+  // Nanoseconds since this process's ART clock started; never negative. S64 rather than Z, whose
+  // width after transpiling follows --bit-width (see hamr-codegen's doc/ExactTime-design.md)
+  type Time = S64
 
   val numComponents: Z = conversions.Z16.toZ(Z16.Max)
   val numPorts: Z = conversions.Z16.toZ(Z16.Max)
@@ -44,9 +46,9 @@ object Art {
     bridges(bridge.id.toZ) = Some(bridge)
     bridge.dispatchProtocol match {
       case DispatchPropertyProtocol.Periodic(period) =>
-        ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (periodic: $period)")
+        ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (periodic: $period ns)")
       case DispatchPropertyProtocol.Sporadic(min) =>
-        ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (sporadic: $min)")
+        ArtNative.logInfo(logTitle, s"Registered component: ${bridge.name} (sporadic: $min ns)")
     }
 
     def r(uports: ISZ[UPort]): Unit = {

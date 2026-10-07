@@ -128,11 +128,13 @@ object Bridge {
 
 object DispatchPropertyProtocol {
 
-  @datatype class Periodic(period: Z) extends DispatchPropertyProtocol
+  // period in nanoseconds (Art.Time)
+  @datatype class Periodic(period: Art.Time) extends DispatchPropertyProtocol
 
   // @datatype class Aperiodic() extends DispatchPropertyProtocol
 
-  @datatype class Sporadic(min: Z) extends DispatchPropertyProtocol
+  // minimum inter-arrival time in nanoseconds (Art.Time)
+  @datatype class Sporadic(min: Art.Time) extends DispatchPropertyProtocol
 
   // @datatype class Timed() extends DispatchPropertyProtocol
 

@@ -8,6 +8,7 @@ import scala.collection.mutable.{Map => MMap}
 
 object ArtMessage {
   val UNSET_TIME: Art.Time = s64"-1"
+  val UNSET_SEQ: S64 = s64"-1"
 }
 
 case class ArtMessage(data: DataContent,
@@ -25,11 +26,25 @@ case class ArtMessage(data: DataContent,
                       var dstArrivalTimestamp: Art.Time = ArtMessage.UNSET_TIME,
 
                       // when receiveInput transferred message to in port vars of consumer
-                      var receiveInputTimestamp: Art.Time = ArtMessage.UNSET_TIME
+                      var receiveInputTimestamp: Art.Time = ArtMessage.UNSET_TIME,
+
+                      // order of arrival at the destination port, per process; same-urgency
+                      // event ports are dispatched in this order, whatever the clock's resolution
+                      var dstArrivalSeq: S64 = ArtMessage.UNSET_SEQ
                      )
 
 object ArtNative_Ext {
   val noTime: Art.Time = s64"0"
+
+  // ART's clock starts when this object is initialised, rather than in Art.run, so that it is also
+  // defined for unit tests that never call Art.run; nanoTime itself has an arbitrary origin
+  private val startNanos: Long = System.nanoTime()
+
+  // per-process arrival counter (see ArtMessage.dstArrivalSeq); atomic, as the legacy scheduler
+  // runs each bridge on its own thread
+  private val arrivalSeq: java.util.concurrent.atomic.AtomicLong = new java.util.concurrent.atomic.AtomicLong(0)
+
+  def nextArrivalSeq(): S64 = toS64(arrivalSeq.incrementAndGet())
 
   val slowdown: Z = 1
 
@@ -178,7 +193,10 @@ object ArtNative_Ext {
           // simulate sending msg via transport middleware
           for (dstPortId <- Art.connections(srcPortId).elements) {
 
-            val _msg = msg.copy(dstPortId = Some(dstPortId), sendOutputTimestamp = Art.time())
+            // the arrival timestamp and sequence number are set before the message is inserted, so
+            // a concurrent dispatch never sees an unset sequence number
+            val _msg = msg.copy(dstPortId = Some(dstPortId), sendOutputTimestamp = Art.time(),
+              dstArrivalTimestamp = Art.time(), dstArrivalSeq = nextArrivalSeq())
 
             Art.port(dstPortId).mode match {
               // right now, there is no difference in the logic between data and event ports,
@@ -188,8 +206,6 @@ object ArtNative_Ext {
               case PortMode.EventIn | PortMode.EventOut =>
                 inInfrastructurePorts(dstPortId.toZ) = _msg
             }
-
-            _msg.dstArrivalTimestamp = Art.time()
 
             ArtDebug_Ext.outputCallback(srcPortId, dstPortId, _msg.data, _msg.dstArrivalTimestamp)
           }
@@ -234,7 +250,8 @@ object ArtNative_Ext {
 
   def logDebug(title: String, msg: String): Unit = log("debug", title, msg)
 
-  def time(): Art.Time = toS64(System.currentTimeMillis())
+  // nanoseconds since ART's clock started (see startNanos)
+  def time(): Art.Time = toS64(System.nanoTime() - startNanos)
 
   //===============================================================================
   //  AADL Thread/Scheduling services
@@ -268,12 +285,12 @@ object ArtNative_Ext {
             if (p1.urgency < p2.urgency) F
             // if p1 has a strictly greater urgency, it comes before p2
             else if (p1.urgency > p2.urgency) T
-            // if p1 and p2 have the same urgency, the ordering is determined by arrival timestamps
-            else inInfrastructurePorts(p1.id.toZ).dstArrivalTimestamp < inInfrastructurePorts(p2.id.toZ).dstArrivalTimestamp
+            // if p1 and p2 have the same urgency, the ordering is determined by arrival order
+            else inInfrastructurePorts(p1.id.toZ).dstArrivalSeq < inInfrastructurePorts(p2.id.toZ).dstArrivalSeq
           case (_: UrgentPort[_], _: Port[_]) => T // urgent ports take precedence
           case (_: Port[_], _: UrgentPort[_]) => F // urgent ports take precedence
           case (p1: Port[_], p2: Port[_]) =>
-            inInfrastructurePorts(p1.id.toZ).dstArrivalTimestamp < inInfrastructurePorts(p2.id.toZ).dstArrivalTimestamp
+            inInfrastructurePorts(p1.id.toZ).dstArrivalSeq < inInfrastructurePorts(p2.id.toZ).dstArrivalSeq
         }.map(_.id)
         EventTriggered(ISZ[Art.PortId](urgentFifo: _*))
     }
@@ -450,7 +467,8 @@ object ArtNative_Ext {
    */
   def insertInInfrastructurePort(dstPortId: Art.PortId, data: DataContent): Unit = {
     // note: that could would be changed when we refactor to support event queues of size > 1
-    val artMessage = ArtMessage(data = data, dstPortId = Some(dstPortId), dstArrivalTimestamp = Art.time())
+    val artMessage = ArtMessage(data = data, dstPortId = Some(dstPortId), dstArrivalTimestamp = Art.time(),
+      dstArrivalSeq = nextArrivalSeq())
     // note: right now, there is no difference in the logic between data and event ports, but keep the
     // logic separate for future refactoring
     Art.port(dstPortId).mode match {

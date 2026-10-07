@@ -52,9 +52,11 @@ object ArtDebug_Ext {
       // right now, there is no difference between treatment of data and event ports, but keep the logic
       // separate for further refactoring
       if (bridge.ports.dataIns.elements.map(_.id).contains(port)) {
-        ArtNative_Ext.inInfrastructurePorts(port.toZ) = ArtMessage(data)
+        ArtNative_Ext.inInfrastructurePorts(port.toZ) = ArtMessage(data = data, dstPortId = Some(port),
+          dstArrivalTimestamp = Art.time(), dstArrivalSeq = ArtNative_Ext.nextArrivalSeq())
       } else {
-        ArtNative_Ext.inInfrastructurePorts(port.toZ) = ArtMessage(data)
+        ArtNative_Ext.inInfrastructurePorts(port.toZ) = ArtMessage(data = data, dstPortId = Some(port),
+          dstArrivalTimestamp = Art.time(), dstArrivalSeq = ArtNative_Ext.nextArrivalSeq())
       }
     }
   }

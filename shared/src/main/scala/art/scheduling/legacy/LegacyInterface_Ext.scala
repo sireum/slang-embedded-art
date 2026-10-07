@@ -7,6 +7,13 @@ import org.sireum._
 object LegacyInterface_Ext {
   val slowdown: Z = 1
 
+  /** The arguments to Thread.sleep(millis, nanos) for a sleep of rate * slowdown nanoseconds;
+    * computed in Z, so neither the product nor a sub-millisecond rate is lost */
+  def sleepArgs(rate: Art.Time, slowdown: Z): (scala.Long, scala.Int) = {
+    val ns = rate.toMP * slowdown.toMP
+    return ((ns / 1000000).toLong, (ns % 1000000).toInt)
+  }
+
   def computePhase(bridges: IS[Art.BridgeId, art.Bridge]): Unit = {
     var terminated = false
     var numTerminated: Z = 0
@@ -24,7 +31,8 @@ object LegacyInterface_Ext {
           ArtNative_Ext.wait()
         }
         while (!terminated) {
-          Thread.sleep((rate * slowdown).toMP.toLong)
+          val (sleepMs, sleepNs) = sleepArgs(rate, slowdown)
+          Thread.sleep(sleepMs, sleepNs)
           if (ArtNative.shouldDispatch(bridge.id)) {
             try {
               bridge.synchronized {

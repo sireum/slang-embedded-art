@@ -8,6 +8,7 @@ import org.sireum.S64._
 
 object ArtSlangMessage {
   val UNSET_TIME: Art.Time = s64"-1"
+  val UNSET_SEQ: S64 = s64"-1"
 }
 
 @datatype class ArtSlangMessage(data: DataContent,
@@ -25,7 +26,11 @@ object ArtSlangMessage {
                                 dstArrivalTimestamp: Art.Time,
 
                                 // when receiveInput transferred message to in port vars of consumer
-                                receiveInputTimestamp: Art.Time
+                                receiveInputTimestamp: Art.Time,
+
+                                // order of arrival at the destination port, per process; same-urgency
+                                // event ports are dispatched in this order, whatever the clock's resolution
+                                dstArrivalSeq: S64
                                )
 
 object ArtNativeSlang {
@@ -34,6 +39,10 @@ object ArtNativeSlang {
   var outInfrastructurePorts: Map[Z, ArtSlangMessage] = Map.empty
   var inPortVariables: Map[Z, ArtSlangMessage] = Map.empty
   var outPortVariables: Map[Z, ArtSlangMessage] = Map.empty
+
+  // per-process arrival counter (see ArtSlangMessage.dstArrivalSeq); the transpiled Demo is
+  // single-threaded
+  var arrivalSeq: S64 = s64"0"
 
   def shouldDispatch(bridgeId: Art.BridgeId): B = {
     assert(Art.bridges(bridgeId.toZ).nonEmpty, s"Bridge ${bridgeId} does not exist")
@@ -65,12 +74,12 @@ object ArtNativeSlang {
         if (p1.urgency < p2.urgency) F
         // if p1 has a strictly greater urgency, it comes before p2
         else if (p1.urgency > p2.urgency) T
-        // if p1 and p2 have the same urgency, the ordering is determined by arrival timestamps
-        else inInfrastructurePorts.get(p1.id.toZ).get.dstArrivalTimestamp < inInfrastructurePorts.get(p2.id.toZ).get.dstArrivalTimestamp
+        // if p1 and p2 have the same urgency, the ordering is determined by arrival order
+        else inInfrastructurePorts.get(p1.id.toZ).get.dstArrivalSeq < inInfrastructurePorts.get(p2.id.toZ).get.dstArrivalSeq
       case (_: UrgentPortProto, _: PortProto) => T // urgent ports take precedence
       case (_: PortProto, _: UrgentPortProto) => F // urgent ports take precedence
       case (p1: PortProto, p2: PortProto) =>
-        inInfrastructurePorts.get(p1.id.toZ).get.dstArrivalTimestamp < inInfrastructurePorts.get(p2.id.toZ).get.dstArrivalTimestamp
+        inInfrastructurePorts.get(p1.id.toZ).get.dstArrivalSeq < inInfrastructurePorts.get(p2.id.toZ).get.dstArrivalSeq
     }
     return r
   }
@@ -146,7 +155,8 @@ object ArtNativeSlang {
     // wrap the Art.DataContent value into an ArtMessage with time stamps
     outPortVariables = outPortVariables + (portId.toZ ~>
       ArtSlangMessage(data = data, srcPortId = portId, putValueTimestamp = Art.time(),
-        dstPortId = None(), sendOutputTimestamp = ArtSlangMessage.UNSET_TIME, dstArrivalTimestamp = ArtSlangMessage.UNSET_TIME, receiveInputTimestamp = ArtSlangMessage.UNSET_TIME))
+        dstPortId = None(), sendOutputTimestamp = ArtSlangMessage.UNSET_TIME, dstArrivalTimestamp = ArtSlangMessage.UNSET_TIME, receiveInputTimestamp = ArtSlangMessage.UNSET_TIME,
+        dstArrivalSeq = ArtSlangMessage.UNSET_SEQ))
   }
 
   def getValue(portId: Art.PortId): Option[DataContent] = {
@@ -188,8 +198,9 @@ object ArtNativeSlang {
 
           // send via middleware
 
+          arrivalSeq = arrivalSeq + s64"1"
           inInfrastructurePorts = inInfrastructurePorts + (dstPortId.toZ ~>
-            _msg(dstArrivalTimestamp = Art.time()))
+            _msg(dstArrivalTimestamp = Art.time(), dstArrivalSeq = arrivalSeq))
         }
 
         // payload delivered so remove it from out infrastructure port

@@ -30,11 +30,11 @@ object ArtTimer_Ext {
     }
   }
 
-  def scheduleTrait(id: String, replaceExisting: B, delay: Art.Time, callback: TimerCallback): Unit = {
-    schedule(id, replaceExisting, delay, callback.callback _)
+  def scheduleTrait(id: String, replaceExisting: B, delayNs: Art.Time, callback: TimerCallback): Unit = {
+    schedule(id, replaceExisting, delayNs, callback.callback _)
   }
 
-  def schedule(id: String, replaceExisting: B, delay: Art.Time, callback: () => Unit): Unit = {
+  def schedule(id: String, replaceExisting: B, delayNs: Art.Time, callback: () => Unit): Unit = {
     if (scheduledCallbacks.get(id).nonEmpty) {
       if (!replaceExisting) {
         ArtNative.logInfo(Art.logTitle, s"Callback already scheduled for $id")
@@ -44,8 +44,8 @@ object ArtTimer_Ext {
       }
     }
 
-    if (delay < s64"0") {
-      ArtNative.logInfo(Art.logTitle, s"Invalid delay time: ${delay}.  Value must be non-negative.")
+    if (delayNs < s64"0") {
+      ArtNative.logInfo(Art.logTitle, s"Invalid delay time: ${delayNs} ns.  Value must be non-negative.")
       return
     }
 
@@ -68,9 +68,9 @@ object ArtTimer_Ext {
 
     scheduledCallbacks.put(id, shouldInvokeCallback)
 
-    val adjusted = delay.toMP.toLong * ArtNative_Ext.slowdown.toMP.toLong
-    executor.schedule(task, adjusted, TimeUnit.MILLISECONDS)
+    val adjusted = (delayNs.toMP * ArtNative_Ext.slowdown.toMP).toLong
+    executor.schedule(task, adjusted, TimeUnit.NANOSECONDS)
 
-    ArtNative.logInfo(Art.logTitle, s"Callback scheduled for $id: $delay ms")
+    ArtNative.logInfo(Art.logTitle, s"Callback scheduled for $id: $delayNs ns")
   }
 }
